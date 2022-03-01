@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -152,7 +153,7 @@ func (ctrl *IOTCtrl) CreateMetric(r *gin.Context) {
 	var payload = &models.Metric{}
 	var err = r.BindJSON(payload)
 	if nil != err {
-		r.JSON(400, "Bad request")
+		r.JSON(400, models.ErrBadRequest("Payload must be json: "+err.Error()))
 		return
 	}
 
@@ -160,6 +161,12 @@ func (ctrl *IOTCtrl) CreateMetric(r *gin.Context) {
 	if nil != err {
 		r.JSON(400, err)
 	} else {
+		err = json.Unmarshal([]byte(payload.Data), &payload.Extract)
+		if nil != err {
+			r.JSON(400, models.ErrBadRequest("Invalid metric data"))
+			return
+		}
+
 		err = ctrl.repo.CreateMetric(payload)
 		if nil != err {
 			r.JSON(http.StatusCreated, payload)

@@ -1,12 +1,13 @@
+.vscode
+
+
 docs
-mount
-scripts
-Dcarbon
 test
-iott-cloud
+scripts
+
 
 
 *.exe
 *.exe~
-
-.vscode
+Dcarbon
+iott-cloud

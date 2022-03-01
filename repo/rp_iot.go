@@ -70,6 +70,7 @@ func (ip *iotRepo) GetByBB(min, max *models.Point4326,
 
 func (ip *iotRepo) CreateMetric(m *models.Metric) error {
 	m.ID = uuid.NewV4().String()
+	m.CreatedAt = time.Now()
 	var status = ip.GetIOTStatus(m.Address)
 	if status < 0 {
 		return models.NewError(models.ECodeIOTNotAllowed, "Iot status is not valid")

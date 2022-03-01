@@ -39,6 +39,7 @@ func main() {
 
 	rt.GET("/swg/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	log.Println("Run server at ", config.Port)
 	err = rt.Run(fmt.Sprintf(":%d", config.Port))
 	if nil != err {
 		log.Println("Listen and serve error: ", err)
