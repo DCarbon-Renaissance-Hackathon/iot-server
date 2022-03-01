@@ -1,0 +1,12 @@
+docs
+mount
+scripts
+Dcarbon
+test
+iott-cloud
+
+
+*.exe
+*.exe~
+
+.vscode
