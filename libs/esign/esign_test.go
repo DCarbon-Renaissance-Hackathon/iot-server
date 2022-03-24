@@ -1,7 +1,9 @@
 package esign
 
 import (
+	"fmt"
 	"log"
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -48,4 +50,10 @@ func TestPersonal(t *testing.T) {
 		panic("Verify personal error: " + err.Error())
 	}
 
+}
+
+func TestParse(t *testing.T) {
+	var x = big.NewInt(72727269)
+	// var raw = x.Bytes()
+	fmt.Println("", hexutil.EncodeBig(x))
 }
