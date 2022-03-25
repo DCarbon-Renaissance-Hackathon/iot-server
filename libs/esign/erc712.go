@@ -1,7 +1,6 @@
 package esign
 
 import (
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -16,7 +15,7 @@ type TypedDataDomain struct {
 type ERC712 struct {
 	domain     *TypedDataDomain
 	types      *TypedDataField
-	domainHash string
+	domainHash []byte
 }
 
 func NewERC712(domain *TypedDataDomain, types *TypedDataField,
@@ -43,18 +42,17 @@ func NewERC712(domain *TypedDataDomain, types *TypedDataField,
 }
 
 func (e712 *ERC712) Hash(data map[string]interface{},
-) (string, error) {
+) ([]byte, error) {
 	var dataHash, err = e712.types.Encode(data)
 	if nil != err {
-		return "", err
+		return nil, err
 	}
-	var sumHex = hexConcat([]string{
-		"0x1901",
+	var sumByte = byteConcat([][]byte{
+		{25, 1},
 		e712.domainHash,
 		dataHash,
 	})
-	var sumHash = crypto.Keccak256(hexutil.MustDecode(sumHex))
-	return hexutil.Encode(sumHash), nil
+	return crypto.Keccak256(sumByte), nil
 }
 
 func (e712 *ERC712) Sign(prvStr string, data map[string]interface{}) ([]byte, error) {
@@ -62,5 +60,5 @@ func (e712 *ERC712) Sign(prvStr string, data map[string]interface{}) ([]byte, er
 	if nil != err {
 		return nil, err
 	}
-	return Sign(prvStr, hexutil.MustDecode(string(hexutil.MustDecode(hash))))
+	return Sign(prvStr, hash)
 }

@@ -25,21 +25,10 @@ func hexPadRight(input string, numByte int) string {
 		input = "0" + input
 	}
 	var offset = numByte - (len(input)/2)%numByte
-	if offset == numByte {
+	if offset == numByte && len(input) > 0 {
 		return "0x" + input
 	}
 	return "0x" + input + strings.Repeat("00", offset)
-}
-
-// Padding to head (left)
-func bytePad(input []byte, numByte int) []byte {
-	if len(input) < numByte {
-		var tmp = make([]byte, numByte-len(input))
-		return append(tmp, input...)
-	} else if len(input) > numByte {
-		return input[:numByte]
-	}
-	return input
 }
 
 func hexConcat(data []string) string {
@@ -50,6 +39,34 @@ func hexConcat(data []string) string {
 		} else {
 			rs += it
 		}
+	}
+	return rs
+}
+
+// Padding to head (left)
+func bytePad(input []byte, numByte int) []byte {
+	if len(input) < numByte {
+		return append(make([]byte, numByte-len(input)), input...)
+	}
+
+	if len(input) > numByte {
+		return input[:numByte]
+	}
+	return input
+}
+
+func bytePadRight(input []byte, numByte int) []byte {
+	var offset = numByte - (len(input) % numByte)
+	if offset == numByte && len(input) > 0 {
+		return input
+	}
+	return append(input, make([]byte, offset)...)
+}
+
+func byteConcat(input [][]byte) []byte {
+	var rs = make([]byte, 0)
+	for _, it := range input {
+		rs = append(rs, it...)
 	}
 	return rs
 }

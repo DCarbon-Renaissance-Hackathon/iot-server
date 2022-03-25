@@ -1,12 +1,14 @@
 package esign
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"log"
 	"math/big"
 	"regexp"
-	"strconv"
 
+	"github.com/Dcarbon/libs/nbig"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -34,7 +36,7 @@ var domainType = MustNewTypedDataField(
 	MustNewTypedDataField("verifyingContract", TypedDataAddress, nil),
 )
 
-type CBEncode func(value interface{}) (string, error)
+type CBEncode func(value interface{}) ([]byte, error)
 
 type TypedDataField struct {
 	// IsArray     bool              `json:"isArray"`
@@ -42,7 +44,7 @@ type TypedDataField struct {
 	Type        TypedData         `json:"type"`
 	Extension   []*TypedDataField `json:"ext"`
 	encodeCache CBEncode          `json:"-"`
-	domainHash  string
+	domainHash  []byte
 }
 
 func NewTypedDataField(name string, dType TypedData, exts ...*TypedDataField,
@@ -70,11 +72,11 @@ func MustNewTypedDataField(name string, dType TypedData, exts ...*TypedDataField
 	return field
 }
 
-func (field *TypedDataField) Encode(value interface{}) (string, error) {
+func (field *TypedDataField) Encode(value interface{}) ([]byte, error) {
 	if nil != field.encodeCache {
 		err := field.SelectEncodeCb()
 		if nil != err {
-			return "", err
+			return nil, err
 		}
 	}
 	return field.encodeCache(value)
@@ -121,112 +123,140 @@ func (field *TypedDataField) SelectEncodeCb() error {
 	return fmt.Errorf("type %s is not support", field.Type)
 }
 
-func (field *TypedDataField) encodeAddress(val interface{}) (string, error) {
-	var addr, ok = val.(string)
-	if !ok {
-		return "", fmt.Errorf("value for TypedDataField address must be hex string")
+func (field *TypedDataField) encodeAddress(val interface{}) ([]byte, error) {
+	switch tVal := val.(type) {
+	case string:
+		var addrByte, err = hexutil.Decode(tVal)
+		if nil != err {
+			return nil, err
+		}
+		return bytePad(addrByte, 32), nil
+	case []byte:
+		return bytePad(tVal, 32), nil
+	default:
+		return nil, fmt.Errorf("value for TypedDataField address must be hex string")
 	}
-	return hexPad(addr, 32), nil
 }
 
-func (field *TypedDataField) encodeBool(val interface{}) (string, error) {
+func (field *TypedDataField) encodeBool(val interface{}) ([]byte, error) {
 	var b, ok = val.(bool)
 	if !ok {
-		return "", fmt.Errorf("value for TypedDataField bool must be bool")
+		return nil, fmt.Errorf("value for TypedDataField bool must be bool")
 	}
 	if b {
-		return hexPad("0x1", 32), nil
+		return bytePad([]byte{1}, 32), nil
 	}
-	return hexPad("0x0", 32), nil
+	return bytePad([]byte{0}, 32), nil
 }
 
-func (field *TypedDataField) encodeBytes(val interface{}) (string, error) {
+func (field *TypedDataField) encodeBytes(val interface{}) ([]byte, error) {
 	var raw, ok = val.([]byte)
 	if !ok {
-		return "", fmt.Errorf("value for TypedDataField bytes must be []byte")
+		return nil, fmt.Errorf("value for TypedDataField bytes must be []byte")
 	}
-	return hexutil.Encode(crypto.Keccak256(raw)), nil
+	return crypto.Keccak256(raw), nil
 }
 
-func (field *TypedDataField) encodeString(val interface{}) (string, error) {
+func (field *TypedDataField) encodeString(val interface{}) ([]byte, error) {
 	var raw, ok = val.(string)
 	if !ok {
-		return "", fmt.Errorf("value for TypedDataField string must be string")
+		return nil, fmt.Errorf("value for TypedDataField string must be string")
 	}
-	return hexutil.Encode(crypto.Keccak256([]byte(raw))), nil
+	return crypto.Keccak256([]byte(raw)), nil
 }
 
-func (field *TypedDataField) encodeIntXXX(val interface{}) (string, error) {
-	var s = ""
+func (field *TypedDataField) encodeIntXXX(val interface{}) ([]byte, error) {
+	var buf = bytes.NewBuffer(nil)
+	var ibig *nbig.Int
 	switch i := val.(type) {
 	case int:
-		s = strconv.FormatInt(int64(i), 16)
+		ibig = nbig.NewInt(int64(i))
 	case int8:
-		s = strconv.FormatInt(int64(i), 16)
+		ibig = nbig.NewInt(int64(i))
 	case int16:
-		s = strconv.FormatInt(int64(i), 16)
+		ibig = nbig.NewInt(int64(i))
 	case int32:
-		s = strconv.FormatInt(int64(i), 16)
+		ibig = nbig.NewInt(int64(i))
 	case int64:
-		s = strconv.FormatInt(int64(i), 16)
+		ibig = nbig.NewInt(int64(i))
 	case uint:
-		s = strconv.FormatInt(int64(i), 16)
+		binary.Write(buf, binary.BigEndian, uint64(i))
+		ibig = nbig.NewInt(0)
+		ibig.SetBytes(buf.Bytes())
 	case uint8:
-		s = strconv.FormatInt(int64(i), 16)
+		binary.Write(buf, binary.BigEndian, uint64(i))
+		ibig = nbig.NewInt(0)
+		ibig.SetBytes(buf.Bytes())
 	case uint16:
-		s = strconv.FormatInt(int64(i), 16)
+		binary.Write(buf, binary.BigEndian, uint64(i))
+		ibig = nbig.NewInt(0)
+		ibig.SetBytes(buf.Bytes())
 	case uint32:
-		s = strconv.FormatInt(int64(i), 16)
+		binary.Write(buf, binary.BigEndian, uint64(i))
+		ibig = nbig.NewInt(0)
+		ibig.SetBytes(buf.Bytes())
 	case uint64:
-		s = strconv.FormatInt(int64(i), 16)
+		binary.Write(buf, binary.BigEndian, uint64(i))
+		ibig = nbig.NewInt(0)
+		ibig.SetBytes(buf.Bytes())
 	case string: // Hex
-		s = i
-	case big.Int:
-		s = hexutil.EncodeBig(&i)
+		decoded, err := hexutil.Decode(i)
+		if nil != err {
+			return nil, err
+		}
+		buf.Write(decoded)
 	case *big.Int:
-		s = hexutil.EncodeBig(i)
+		ibig = &nbig.Int{
+			Int: i,
+		}
+	case *nbig.Int:
+		buf.Write(i.Bytes())
 	default:
-		return "", fmt.Errorf("value for TypedDataField Intxx is invalid (%s)", i)
+		return nil, fmt.Errorf("value for TypedDataField Intxx is invalid (%s)", i)
 	}
-	return hexPad(s, 32), nil
+
+	if ibig == nil {
+		return nil, fmt.Errorf("value for TypedDataField Intxx is invalid")
+	}
+	if ibig.Sign() < 0 && field.Type[0] == 'u' {
+		return nil, fmt.Errorf("value is negative for TypedDataField unsign")
+	}
+	return bytePad(ibig.ToTwo(256), 32), nil
 }
 
-func (field *TypedDataField) encodeByteXXX(val interface{}) (string, error) {
+func (field *TypedDataField) encodeByteXXX(val interface{}) ([]byte, error) {
 	switch i := val.(type) {
 	case string:
-		return hexPadRight(i, 32), nil
+		return bytePadRight([]byte(i), 32), nil
 	case []byte:
-		var hex = hexutil.Encode(i)
-		return hexPadRight(hex, 32), nil
+		return bytePadRight(i, 32), nil
 	}
-	return "", fmt.Errorf("value for TypedDataField string must be string")
+	return nil, fmt.Errorf("value for TypedDataField string must be string")
 }
 
-func (field *TypedDataField) encodeStruct(val interface{}) (string, error) {
+func (field *TypedDataField) encodeStruct(val interface{}) ([]byte, error) {
 	var data, ok = val.(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("value for TypedDataField struct must be map[string]interface")
+		return nil, fmt.Errorf("value for TypedDataField struct must be map[string]interface")
 	}
-	var ls = []string{field.domainHash}
+	var ls = [][]byte{field.domainHash}
 	for _, it := range field.Extension {
 		var itVal = data[it.Name]
 		if nil == itVal {
-			return "", fmt.Errorf("not found value of field %s", it.Name)
+			return nil, fmt.Errorf("not found value of field %s", it.Name)
 		}
 		hash, err := it.Encode(itVal)
 		if nil != err {
-			return "", err
+			return nil, err
 		}
 		ls = append(ls, hash)
 	}
 
-	var sum = hexConcat(ls)
-	var hashSum = crypto.Keccak256(hexutil.MustDecode(sum))
-	return hexutil.Encode(hashSum), nil
+	return crypto.Keccak256(byteConcat(ls)), nil
 }
 
-func (field *TypedDataField) encodeArray(val interface{}) (string, error) {
-	return "", fmt.Errorf("not implement")
+func (field *TypedDataField) encodeArray(val interface{}) ([]byte, error) {
+	return nil, fmt.Errorf("array encode (TypedDataField) not implement")
 }
 
 func (field *TypedDataField) generateDomainHash() {
@@ -238,5 +268,5 @@ func (field *TypedDataField) generateDomainHash() {
 		}
 	}
 	domainType += ")"
-	field.domainHash = hexutil.Encode(crypto.Keccak256([]byte(domainType)))
+	field.domainHash = crypto.Keccak256([]byte(domainType))
 }

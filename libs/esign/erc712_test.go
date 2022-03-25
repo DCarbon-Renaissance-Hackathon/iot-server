@@ -1,9 +1,12 @@
 package esign
 
 import (
+	"fmt"
 	"log"
 	"math/big"
 	"testing"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 func TestErc712(t *testing.T) {
@@ -34,12 +37,24 @@ func TestErc712(t *testing.T) {
 	log.Println("Minter hash: ", hash)
 }
 
-func TestInt(t *testing.T) {
-	var typeInt = MustNewTypedDataField("test_int", "uint256")
+func TestEncodeIntXXX(t *testing.T) {
 
-	hash, err := typeInt.Encode(big.NewInt(101))
+	var typeInt = MustNewTypedDataField("test_int", "int256")
+	var data, err = typeInt.Encode(-256)
 	panicError("", err)
-	log.Println(hash)
+	printHexFromByte("Uint256", data)
+
+}
+
+func TestInt(t *testing.T) {
+	var typeInt = MustNewTypedDataField("test_int", "int256")
+	hash, err := typeInt.Encode(big.NewInt(-1))
+	panicError("", err)
+	log.Println(hexutil.Encode(hash))
+}
+
+func printHexFromByte(label string, v []byte) {
+	fmt.Println(label + ": " + hexutil.Encode(v))
 }
 
 func panicError(label string, err error) {
