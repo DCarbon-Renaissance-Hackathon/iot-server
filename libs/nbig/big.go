@@ -34,7 +34,7 @@ func (i *Int) ToTwo(width int) []byte {
 	var nByte = width / 8
 	if i.Sign() >= 0 {
 		var current = i.Bytes()
-		if width >= nByte {
+		if len(current) >= nByte {
 			return current[:nByte]
 		}
 		return append(make([]byte, nByte-len(current)), current...)

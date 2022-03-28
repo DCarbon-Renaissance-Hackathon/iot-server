@@ -3,7 +3,7 @@ package esign
 import "strings"
 
 // Padding to head (left)
-func hexPad(input string, numByte int) string {
+func HexPad(input string, numByte int) string {
 	if len(input) >= 2 && input[:2] == "0x" {
 		input = input[2:]
 	}
@@ -16,7 +16,7 @@ func hexPad(input string, numByte int) string {
 	return "0x" + input
 }
 
-func hexPadRight(input string, numByte int) string {
+func HexPadRight(input string, numByte int) string {
 	if len(input) >= 2 && input[:2] == "0x" {
 		input = input[2:]
 	}
@@ -31,7 +31,7 @@ func hexPadRight(input string, numByte int) string {
 	return "0x" + input + strings.Repeat("00", offset)
 }
 
-func hexConcat(data []string) string {
+func HexConcat(data []string) string {
 	var rs = "0x"
 	for _, it := range data {
 		if len(it) >= 2 && it[:2] == "0x" {

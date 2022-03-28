@@ -22,19 +22,29 @@ func TestErc712(t *testing.T) {
 			TypedDataStruct,
 			MustNewTypedDataField("iot", TypedDataAddress),
 			MustNewTypedDataField("amount", "uint256"),
-			MustNewTypedDataField("nonce", "uint256"),
+			MustNewTypedDataField("nonce", "int32"),
 		),
 	)
 	panicError("", err)
 
-	log.Println("DomainHash: ", minter.domainHash)
-	hash, err := minter.Hash(map[string]interface{}{
+	var data = map[string]interface{}{
 		"iot":    "0x5c77E37aA7AFa0064b1eFb01cFbf2EfdFF49E7EA",
-		"amount": 101,
-		"nonce":  72727269,
-	})
-	panicError("Minter hash", err)
-	log.Println("Minter hash: ", hash)
+		"amount": "0xff12aa",
+		"nonce":  -200,
+	}
+
+	signed, err := minter.Sign(PrvStr, data)
+	panicError("Minter signed", err)
+	signedHex := hexutil.Encode(signed)
+	log.Println("Minter signed hex: ", signedHex)
+
+	err = minter.Verify(
+		"0x5c77E37aA7AFa0064b1eFb01cFbf2EfdFF49E7EA",
+		signed,
+		data,
+	)
+	panicError("Minter verify ", err)
+
 }
 
 func TestEncodeIntXXX(t *testing.T) {

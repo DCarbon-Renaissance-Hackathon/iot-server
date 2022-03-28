@@ -79,7 +79,14 @@ func (field *TypedDataField) Encode(value interface{}) ([]byte, error) {
 			return nil, err
 		}
 	}
-	return field.encodeCache(value)
+
+	encoded, err := field.encodeCache(value)
+	if nil != err {
+		log.Printf("Encode field %s error: %s\n", field.Name, err.Error())
+		return nil, err
+	}
+	// fmt.Printf("%s\t\t\t: %s\n", field.Name, hexutil.Encode(encoded))
+	return encoded, nil
 }
 
 func (field *TypedDataField) SelectEncodeCb() error {
@@ -167,7 +174,7 @@ func (field *TypedDataField) encodeString(val interface{}) ([]byte, error) {
 
 func (field *TypedDataField) encodeIntXXX(val interface{}) ([]byte, error) {
 	var buf = bytes.NewBuffer(nil)
-	var ibig *nbig.Int
+	var ibig = nbig.NewInt(0)
 	switch i := val.(type) {
 	case int:
 		ibig = nbig.NewInt(int64(i))
@@ -181,23 +188,18 @@ func (field *TypedDataField) encodeIntXXX(val interface{}) ([]byte, error) {
 		ibig = nbig.NewInt(int64(i))
 	case uint:
 		binary.Write(buf, binary.BigEndian, uint64(i))
-		ibig = nbig.NewInt(0)
 		ibig.SetBytes(buf.Bytes())
 	case uint8:
 		binary.Write(buf, binary.BigEndian, uint64(i))
-		ibig = nbig.NewInt(0)
 		ibig.SetBytes(buf.Bytes())
 	case uint16:
 		binary.Write(buf, binary.BigEndian, uint64(i))
-		ibig = nbig.NewInt(0)
 		ibig.SetBytes(buf.Bytes())
 	case uint32:
 		binary.Write(buf, binary.BigEndian, uint64(i))
-		ibig = nbig.NewInt(0)
 		ibig.SetBytes(buf.Bytes())
 	case uint64:
 		binary.Write(buf, binary.BigEndian, uint64(i))
-		ibig = nbig.NewInt(0)
 		ibig.SetBytes(buf.Bytes())
 	case string: // Hex
 		decoded, err := hexutil.Decode(i)
@@ -205,12 +207,11 @@ func (field *TypedDataField) encodeIntXXX(val interface{}) ([]byte, error) {
 			return nil, err
 		}
 		buf.Write(decoded)
+		ibig.SetBytes(buf.Bytes())
 	case *big.Int:
-		ibig = &nbig.Int{
-			Int: i,
-		}
+		ibig.Set(i)
 	case *nbig.Int:
-		buf.Write(i.Bytes())
+		ibig.Set(i.Int)
 	default:
 		return nil, fmt.Errorf("value for TypedDataField Intxx is invalid (%s)", i)
 	}
