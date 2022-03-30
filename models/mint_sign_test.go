@@ -12,11 +12,11 @@ const AddrStr = "0xCC719739eD48B0258456F104DA7ba83Ba6881C35"
 const PrvStr = "5763b65df1b1860bfa8a372ae589f1a67811c3e4a7234d29fc3d68d2c531e547"
 
 func TestMintSignAndVerify(t *testing.T) {
-	var m = &MintSignature{
+	var m = &MintSign{
 		ID:     0,
 		Nonce:  100,
 		Amount: "0xaabbcc",
-		IoT:    AddrStr,
+		IOT:    AddrStr,
 	}
 	signed, err := m.Sign(PrvStr)
 	utils.PanicError("TestMintSign", err)

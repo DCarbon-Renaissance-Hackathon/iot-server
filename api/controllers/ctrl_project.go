@@ -58,14 +58,13 @@ func (ctrl *ProjectCtrl) Create(r *gin.Context) {
 // @Tags         Project
 // @Accept       json
 // @Produce      json
-// @Param        project_id		path      	integer  true  "IOT address"
 // @Success      200			{array}		models.Project
 // @Failure      400			{object}	models.Error
 // @Failure      404  			{object}	models.Error
 // @Failure      500  			{object}	models.Error
-// @Router       /projects/{project_id} [get]
+// @Router       /projects/{projectId} [get]
 func (ctrl *ProjectCtrl) GetByID(r *gin.Context) {
-	id, err := strconv.ParseInt(r.Param("project_id"), 10, 64)
+	id, err := strconv.ParseInt(r.Param("projectId"), 10, 64)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest("ID must be int64"))
 		return
@@ -121,35 +120,35 @@ func (ctrl *ProjectCtrl) GetList(r *gin.Context) {
 // @Tags         Project
 // @Accept       json
 // @Produce      json
-// @Param        min_lng   	query      	number  true  "Min longitude"
-// @Param        min_lat   	query      	number  true  "Min latitude"
-// @Param        max_lng   	query      	number  true  "Max longitude"
-// @Param        max_lat   	query      	number  true  "Max latitude"
+// @Param        minLng   	query      	number  true  "Min longitude"
+// @Param        minLat   	query      	number  true  "Min latitude"
+// @Param        maxLng   	query      	number  true  "Max longitude"
+// @Param        maxLat   	query      	number  true  "Max latitude"
 // @Success      200		{array}		models.Project
 // @Failure      400		{object}	models.Error
 // @Failure      404  		{object}	models.Error
 // @Failure      500  		{object}	models.Error
 // @Router       /projects/by-bb [get]
 func (ctrl *ProjectCtrl) GetByBB(r *gin.Context) {
-	minLng, err := strconv.ParseFloat(r.Query("min_lng"), 64)
+	minLng, err := strconv.ParseFloat(r.Query("minLng"), 64)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest("Min longitude must be double"))
 		return
 	}
-	minLat, err := strconv.ParseFloat(r.Query("min_lat"), 64)
+	minLat, err := strconv.ParseFloat(r.Query("minLat"), 64)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest("Min latitude must be double"))
 		return
 	}
 
-	maxLng, err := strconv.ParseFloat(r.Query("max_lng"), 64)
+	maxLng, err := strconv.ParseFloat(r.Query("maxLng"), 64)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Min longitude must be double"))
+		r.JSON(400, models.ErrBadRequest("Max longitude must be double"))
 		return
 	}
-	maxLat, err := strconv.ParseFloat(r.Query("max_lat"), 64)
+	maxLat, err := strconv.ParseFloat(r.Query("maxLat"), 64)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Min latitude must be double"))
+		r.JSON(400, models.ErrBadRequest("Max latitude must be double"))
 		return
 	}
 
@@ -175,12 +174,12 @@ func (ctrl *ProjectCtrl) GetByBB(r *gin.Context) {
 // @Tags         Project
 // @Accept       json
 // @Produce      json
-// @Param        id   		body      	models.Project  true  "IOT address"
+// @Param        payload	body      	models.Project  true  "Project"
 // @Success      200		{array}		models.Project
 // @Failure      400		{object}	models.Error
-// @Failure      404  		{object}	models.Error
-// @Failure      500  		{object}	models.Error
-// @Router       /projects/{project_id}/change-status [put]
+// @Failure      404		{object}	models.Error
+// @Failure      500		{object}	models.Error
+// @Router       /projects/{projectId}/change-status [put]
 func (ctrl *ProjectCtrl) ChangeStatus(r *gin.Context) {
 
 }

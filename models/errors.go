@@ -22,7 +22,9 @@ const (
 	// Project error
 
 	// IOT error
-	ECodeIOTNotAllowed = 41000
+	ECodeIOTNotAllowed      = 41000
+	ECodeIOTInvalidNonce    = 41001
+	ECodeIOTInvalidMintSign = 41002
 )
 
 //
@@ -61,7 +63,7 @@ func ParsePostgresError(label string, err error) error {
 	if nil == err {
 		return nil
 	}
-
+	log.Println("Postgres error: ", err)
 	if err == gorm.ErrRecordNotFound {
 		return NewError(
 			ECodeNotExisted,

@@ -32,7 +32,10 @@ func main() {
 	docs.SwaggerInfo.Version = "1.0.0"
 	docs.SwaggerInfo.Description = "Internet of trusted thing cloud"
 	docs.SwaggerInfo.BasePath = "/api/v1"
-	docs.SwaggerInfo.Schemes = []string{"http"}
+	docs.SwaggerInfo.Schemes = []string{
+		utils.StringEnv("DOMAIN_SCHEME", "http"),
+	}
+	docs.SwaggerInfo.Host = utils.StringEnv("DOMAIN", "localhost:8081")
 
 	var rt, err = routers.NewRouter(config)
 	utils.PanicError("Create router", err)

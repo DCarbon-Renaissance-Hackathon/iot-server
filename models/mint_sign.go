@@ -23,42 +23,58 @@ var minterDomain = esign.MustNewERC712(
 	),
 )
 
-type MintSignature struct {
-	ID        int64     `gorm:"primary_key"` //
-	Nonce     int64     `gorm:"index"`       //
-	Amount    string    ``                   // Hex
-	IoT       string    `gorm:"index"`       // IoT Address
-	R         string    ``                   //
-	S         string    ``                   //
-	V         string    ``                   //
-	CreatedAt time.Time ``
-	UpdatedAt time.Time ``
+type MintSign struct {
+	ID        int64     `json:"id" gorm:"primary_key"` //
+	Nonce     int64     `json:"nonce" gorm:"index"`    //
+	Amount    string    `json:"amount" `               // Hex
+	IOT       string    `json:"iot" gorm:"index"`      // IoT Address
+	R         string    `json:"r" `                    //
+	S         string    `json:"s" `                    //
+	V         string    `json:"v" `                    //
+	CreatedAt time.Time `json:"createdAt" `            //
+	UpdatedAt time.Time `json:"updatedAt" `            //
 }
 
-func (*MintSignature) TableName() string { return TableNameMintSignature }
+func (*MintSign) TableName() string { return TableNameMintSign }
 
 // prvStr: private key (hex)
-func (msign *MintSignature) Sign(prvStr string) ([]byte, error) {
-	return minterDomain.Sign(prvStr, map[string]interface{}{
-		"iot":    msign.IoT,
+func (msign *MintSign) Sign(prvStr string) ([]byte, error) {
+	signedRaw, err := minterDomain.Sign(prvStr, map[string]interface{}{
+		"iot":    msign.IOT,
 		"amount": msign.Amount,
 		"nonce":  msign.Nonce,
 	})
+	if nil != err {
+		return nil, err
+	}
+
+	msign.R = hexutil.Encode(signedRaw[:32])
+	msign.S = hexutil.Encode(signedRaw[32:64])
+	msign.V = hexutil.Encode(signedRaw[64:])
+
+	return signedRaw, nil
 }
 
-func (msign *MintSignature) Verify() error {
+func (msign *MintSign) Verify() error {
 	var data = map[string]interface{}{
-		"iot":    msign.IoT,
+		"iot":    msign.IOT,
 		"amount": msign.Amount,
 		"nonce":  msign.Nonce,
 	}
+
 	var signed, err = hexutil.Decode(
 		esign.HexConcat(
 			[]string{msign.R, msign.S, msign.V},
 		),
 	)
+
 	if nil != err {
-		return err
+		return NewError(ECodeIOTInvalidMintSign, "Invalid mint sign: "+err.Error())
 	}
-	return minterDomain.Verify(msign.IoT, signed, data)
+
+	err = minterDomain.Verify(msign.IOT, signed, data)
+	if nil != err {
+		return NewError(ECodeIOTInvalidMintSign, "Invalid mint sign: "+err.Error())
+	}
+	return nil
 }

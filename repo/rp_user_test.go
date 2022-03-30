@@ -36,7 +36,11 @@ func TestLogin(t *testing.T) {
 
 	user, err := uRepo.Login(adminAddr, hexutil.Encode(signed), org)
 	utils.PanicError("Login-SignPersonal", err)
-
+	utils.Dump("Login payload", map[string]interface{}{
+		"address":   adminAddr,
+		"now":       now,
+		"signature": hexutil.Encode(signed),
+	})
 	log.Println("User: ", user)
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/Dcarbon/domain"
 	"github.com/Dcarbon/models"
 	"github.com/Dcarbon/repo"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,8 +34,8 @@ func NewIOTCtrl(dbUrl string) (*IOTCtrl, error) {
 // @Tags         IOTS
 // @Accept       json
 // @Produce      json
-// @Param        id   				body		models.IOTDevice	true	"IOT information"
-// @Param        Authorization		header		string				true	"Authorization"
+// @Param        iot   				body		models.IOTDevice	true	"IOT information"
+// @Param        Authorization		header		string				true	"Authorization token (`Bearer $token`)"
 // @Success      200				{object}	models.IOTDevice
 // @Failure      400				{object}	models.Error
 // @Failure      404				{object}	models.Error
@@ -61,12 +62,11 @@ func (ctrl *IOTCtrl) Create(r *gin.Context) {
 // @Tags         IOTS
 // @Accept       json
 // @Produce      json
-// @Param        id   		body      	RIOTChangeStatus	true	"IOT address"
-// @Success      200		{object}	models.IOTDevice
-// @Failure      400		{object}	models.Error
-// @Failure      404  		{object}	models.Error
-// @Failure      500  		{object}	models.Error
-// @Router       /iots/{iot_id}/change-status [put]
+// @Param        payload			body		RIOTChangeStatus	true	"IOT address"
+// @Param        Authorization		header		string				true	"Authorization token (`Bearer $token`)"
+// @Success      200				{object}	models.IOTDevice
+// @Failure      400				{object}	models.Error
+// @Router       /iots/{iotId}/change-status [put]
 func (ctrl *IOTCtrl) ChangeStatus(r *gin.Context) {
 	var payload = &RIOTChangeStatus{}
 	var err = r.Bind(payload)
@@ -83,38 +83,36 @@ func (ctrl *IOTCtrl) ChangeStatus(r *gin.Context) {
 }
 
 // Create godoc
-// @Summary      GetByBB
+// @Summary      Get by bounding box
 // @Description  Get iot by bounding box
 // @Tags         IOTS
 // @Accept       json
 // @Produce      json
-// @Param        min_lng   	query      	number  true  "Min longitude"
-// @Param        min_lat   	query      	number  true  "Min latitude"
-// @Param        max_lng   	query      	number  true  "Max longitude"
-// @Param        max_lat   	query      	number  true  "Max latitude"
+// @Param        minLng   	query      	number  true  "Min longitude"
+// @Param        minLat   	query      	number  true  "Min latitude"
+// @Param        maxLng   	query      	number  true  "Max longitude"
+// @Param        maxLat   	query      	number  true  "Max latitude"
 // @Success      200		{array}		models.IOTDevice
 // @Failure      400		{object}	models.Error
-// @Failure      404  		{object}	models.Error
-// @Failure      500  		{object}	models.Error
 // @Router       /iots/by-bb [get]
 func (ctrl *IOTCtrl) GetByBB(r *gin.Context) {
-	minLng, err := strconv.ParseFloat(r.Query("min_lng"), 64)
+	minLng, err := strconv.ParseFloat(r.Query("minLng"), 64)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest("Min longitude must be double"))
 		return
 	}
-	minLat, err := strconv.ParseFloat(r.Query("min_lat"), 64)
+	minLat, err := strconv.ParseFloat(r.Query("minLat"), 64)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest("Min latitude must be double"))
 		return
 	}
 
-	maxLng, err := strconv.ParseFloat(r.Query("max_lng"), 64)
+	maxLng, err := strconv.ParseFloat(r.Query("maxLng"), 64)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest("Min longitude must be double"))
 		return
 	}
-	maxLat, err := strconv.ParseFloat(r.Query("max_lat"), 64)
+	maxLat, err := strconv.ParseFloat(r.Query("maxLat"), 64)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest("Min latitude must be double"))
 		return
@@ -143,12 +141,11 @@ func (ctrl *IOTCtrl) GetByBB(r *gin.Context) {
 // @Tags         IOTS
 // @Accept       json
 // @Produce      json
-// @Param        payload	body			models.Metric	true	"IOT address"
+// @Param        iotAddr	path			string				true	"IOT address"
+// @Param        payload	body			models.Metric		true	"Metric payload"
 // @Success      200		{object}		models.Metric
 // @Failure      400		{object}		models.Error
-// @Failure      404		{object}		models.Error
-// @Failure      500		{object}		models.Error
-// @Router       /iots/:iotAddr/metrics 	[post]
+// @Router       /iots/{iotAddr}/metrics 	[post]
 func (ctrl *IOTCtrl) CreateMetric(r *gin.Context) {
 	var payload = &models.Metric{}
 	var err = r.BindJSON(payload)
@@ -161,20 +158,24 @@ func (ctrl *IOTCtrl) CreateMetric(r *gin.Context) {
 	if nil != err {
 		r.JSON(400, err)
 	} else {
-		err = json.Unmarshal([]byte(payload.Data), &payload.Extract)
+		raw, err := hexutil.Decode(payload.Data)
 		if nil != err {
-			r.JSON(400, models.ErrBadRequest("Invalid metric data"))
+			r.JSON(400, models.ErrBadRequest("Data must be hex"))
+			return
+		}
+		err = json.Unmarshal(raw, &payload.Extract)
+		if nil != err {
+			r.JSON(400, models.ErrBadRequest("Invalid metric data: "+err.Error()))
 			return
 		}
 
 		err = ctrl.repo.CreateMetric(payload)
 		if nil != err {
-			r.JSON(http.StatusCreated, payload)
-		} else {
 			r.JSON(500, err)
+		} else {
+			r.JSON(http.StatusCreated, payload)
 		}
 	}
-
 }
 
 // GetRawMetric godoc
@@ -197,6 +198,7 @@ func (ctrl *IOTCtrl) GetMetrics(r *gin.Context) {
 		r.JSON(400, models.ErrQueryParam("from must be int"))
 		return
 	}
+
 	to, err := strconv.ParseInt(r.Query("to"), 10, 64)
 	if nil != err {
 		r.JSON(400, models.ErrQueryParam("to must be int"))
@@ -230,15 +232,78 @@ func (ctrl *IOTCtrl) GetRawMetric(r *gin.Context) {
 	var iotAddr = r.Param("iotAddr")
 	var metricId = r.Param("metricId")
 	if iotAddr == "" || metricId == "" {
-		r.JSON(500, models.ErrBadRequest(""))
+		r.JSON(500, models.ErrBadRequest("Missing metric id "))
 		return
 	}
 
-	data, err := ctrl.repo.GetRawMetric(iotAddr, metricId)
+	data, err := ctrl.repo.GetRawMetric(metricId)
 	if nil != err {
 		r.JSON(500, err)
 	} else {
 		r.JSON(200, data)
+	}
+}
+
+// GetRawMetric		godoc
+// @Summary			IOT save mint signature
+// @Description		IOT save mint signature
+// @Tags			IOTS
+// @Accept			json
+// @Produce			json
+// @Param			iot				body		models.MintSign		true	"Signature"
+// @Success			200				{object}	models.Metric
+// @Failure			400				{object}	models.Error
+// @Failure			404				{object}	models.Error
+// @Failure			500				{object}	models.Error
+// @Router			/iots/{iotAddr}/mint-sign/ [post]
+func (ctrl *IOTCtrl) CreateMint(r *gin.Context) {
+	var mint = &models.MintSign{}
+	var err = r.BindJSON(mint)
+	if nil != err {
+		r.JSON(400, models.ErrBadRequest("Payload must be json: "+err.Error()))
+		return
+	}
+
+	err = ctrl.repo.CreateMint(mint)
+	if nil != err {
+		r.JSON(500, err)
+	} else {
+		r.JSON(200, mint)
+	}
+}
+
+// GetRawMetric		godoc
+// @Summary			Get mint signature of iot
+// @Description		Get mint signature of iot
+// @Tags			IOTS
+// @Accept			json
+// @Produce			json
+// @Param			iotAddr			path		string  			true  "IOT address"
+// @Param			fromNonce		query		number				true  "LatestNonce"
+// @Success			200				{array}		models.MintSign
+// @Failure			400				{object}	models.Error
+// @Failure			404				{object}	models.Error
+// @Failure			500				{object}	models.Error
+// @Router			/iots/{iotAddr}/mint-sign/ [get]
+func (ctrl *IOTCtrl) GetMintSigns(r *gin.Context) {
+	var iotAddress = r.Param("iotAddr")
+	if iotAddress == "" {
+		r.JSON(400, models.ErrBadRequest("Missing iot address"))
+		return
+	}
+
+	var fromNonce, err = strconv.ParseInt(r.Query("fromNonce"), 10, 64)
+	if nil != err {
+		r.JSON(400, models.ErrBadRequest("Missing iot nonce"))
+		return
+	}
+
+	signeds, err := ctrl.repo.GetMintSigns(iotAddress, int(fromNonce))
+	if nil != err {
+		r.JSON(500, err)
+		return
+	} else {
+		r.JSON(200, signeds)
 	}
 }
 

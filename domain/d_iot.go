@@ -10,5 +10,8 @@ type IIot interface {
 
 	CreateMetric(*models.Metric) error
 	GetMetrics(iotAddr string, from, to int64) ([]*models.Metric, error)
-	GetRawMetric(iotAddr string, metricId string) (*models.Metric, error)
+	GetRawMetric(metricId string) (*models.Metric, error)
+
+	CreateMint(mint *models.MintSign) error
+	GetMintSigns(iotAddr string, fromNonce int) ([]*models.MintSign, error)
 }

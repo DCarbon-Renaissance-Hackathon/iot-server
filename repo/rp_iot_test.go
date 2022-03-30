@@ -2,6 +2,7 @@ package repo
 
 import (
 	"encoding/json"
+	"log"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/Dcarbon/libs/esign"
 	"github.com/Dcarbon/libs/utils"
 	"github.com/Dcarbon/models"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
@@ -87,8 +89,11 @@ func TestIOTCreateMetrics(t *testing.T) {
 		CreatedAt: time.Now(),
 	}
 
-	err = irepo.CreateMetric(metric)
-	utils.PanicError("Create iot metrics ", err)
+	metric.Extract = models.ExtractMetric{}
+	utils.Dump("", metric)
+
+	// err = irepo.CreateMetric(metric)
+	// utils.PanicError("Create iot metrics ", err)
 }
 
 func TestGetMetrics(t *testing.T) {
@@ -104,10 +109,32 @@ func TestGetMetrics(t *testing.T) {
 }
 
 func TestGetRawMetrics(t *testing.T) {
-	var data, err = irepo.GetRawMetric(
-		"0x6CFF13d489623029d4d102Fa81947527E175BA8D",
-		"c419eb47-250e-44ec-98e1-f86b1a813520",
-	)
+	var data, err = irepo.GetRawMetric("c419eb47-250e-44ec-98e1-f86b1a813520")
 	utils.PanicError("TestGetRawMetrics", err)
 	utils.Dump("TestGetRawMetrics", data)
+}
+
+func TestCreateMint(t *testing.T) {
+	var sign = &models.MintSign{
+		Nonce:  1,
+		Amount: "0xffaaa1",
+		IOT:    iotAddr,
+	}
+	_, err := sign.Sign(iotPrv)
+	utils.PanicError("TestCreateMint", err)
+
+	utils.Dump("MintSign: ", sign)
+	// err = irepo.CreateMint(sign)
+	// utils.PanicError("TestCreateMint", err)
+}
+
+func TestGetMint(t *testing.T) {
+	var signeds, err = irepo.GetMintSigns(iotAddr, 0)
+	utils.PanicError("TestGetMint", err)
+	utils.Dump("TestGetMint", signeds)
+}
+
+func TestIsAddress(t *testing.T) {
+	isAddr := common.IsHexAddress("0x6cff13d489623029d4d102fa81947527e175ba8d")
+	log.Println("Is address: ", isAddr)
 }

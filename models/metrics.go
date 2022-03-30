@@ -25,7 +25,7 @@ type ExtractMetric struct {
 
 type Metric struct {
 	ID        string        `json:"id,omitempty"`                      //
-	Address   string        `json:"address,omitempty"`                 //
+	Address   string        `json:"address,omitempty"`                 // IOT address
 	Data      string        `json:"data,omitempty"`                    // Json string
 	Signed    string        `json:"signed,omitempty"`                  // Hex
 	Extract   ExtractMetric `json:"extract,omitempty" gorm:"embedded"` //

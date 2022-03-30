@@ -3,7 +3,6 @@ package routers
 import (
 	"github.com/Dcarbon/api/controllers"
 	"github.com/Dcarbon/api/mids"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -54,7 +53,7 @@ func NewRouter(config Config) (*Router, error) {
 		auth:         &mids.A2M{},
 	}
 
-	r.Use(cors.Default())
+	r.Use(mids.GetCORS())
 
 	var v1 = r.Group("/api/v1")
 	v1.GET("/ping", func(c *gin.Context) {
@@ -68,25 +67,19 @@ func NewRouter(config Config) (*Router, error) {
 			mids.NewA2(config.JwtKey, "iot-create").HandlerFunc,
 			iotCtrl.Create,
 		)
-		iotRoute.GET("/", iotCtrl.GetByBB)
 		iotRoute.PUT(
 			"/:id/change-status",
 			mids.NewA2(config.JwtKey, "iot-change-status").HandlerFunc,
 			iotCtrl.ChangeStatus,
 		)
+		iotRoute.GET("/", iotCtrl.GetByBB)
 
-		iotRoute.POST("/:iotAddr/metrics",
-			r.auth.HandlerFunc,
-			iotCtrl.CreateMetric,
-		)
-		iotRoute.GET("/:iotAddr/metrics",
-			r.auth.HandlerFunc,
-			iotCtrl.GetMetrics,
-		)
-		iotRoute.GET("/:iotAddr/metrics/:metricId",
-			r.auth.HandlerFunc,
-			iotCtrl.GetRawMetric,
-		)
+		iotRoute.POST("/:iotAddr/metrics", iotCtrl.CreateMetric)
+		iotRoute.GET("/:iotAddr/metrics", iotCtrl.GetMetrics)
+		iotRoute.GET("/:iotAddr/metrics/:metricId", iotCtrl.GetRawMetric)
+
+		iotRoute.POST("/:iotAddr/mint-sign/", iotCtrl.CreateMint)
+		iotRoute.GET("/:iotAddr/mint-sign/", iotCtrl.GetMintSigns)
 	}
 
 	var projectRoute = v1.Group("/projects")
