@@ -1,6 +1,6 @@
 package domain
 
-import "github.com/Dcarbon/models"
+import "github.com/Dcarbon/iott-cloud/models"
 
 type IIot interface {
 	Create(iot *models.IOTDevice) error

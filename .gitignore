@@ -1,13 +1,9 @@
 .vscode
 
-
 docs
 test
 scripts
 
 
-
 *.exe
 *.exe~
-Dcarbon
-iott-cloud

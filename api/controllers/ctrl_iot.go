@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Dcarbon/domain"
-	"github.com/Dcarbon/models"
-	"github.com/Dcarbon/repo"
+	"github.com/Dcarbon/iott-cloud/domain"
+	"github.com/Dcarbon/iott-cloud/models"
+	"github.com/Dcarbon/iott-cloud/repo"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gin-gonic/gin"
 )
@@ -63,6 +63,7 @@ func (ctrl *IOTCtrl) Create(r *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        payload			body		RIOTChangeStatus	true	"IOT address"
+// @Param        iotId				path  		string 				true	"IOT id"
 // @Param        Authorization		header		string				true	"Authorization token (`Bearer $token`)"
 // @Success      200				{object}	models.IOTDevice
 // @Failure      400				{object}	models.Error
@@ -184,9 +185,9 @@ func (ctrl *IOTCtrl) CreateMetric(r *gin.Context) {
 // @Tags         IOTS
 // @Accept       json
 // @Produce      json
-// @Param        iotAddr	path		string  true  "IOT address"
-// @Param        from		query		integer	true  "Timestamp"
-// @Param        to			query		integer	true  "Timestamp"
+// @Param        iotAddr	path		string 			true  "IOT address"
+// @Param        from		query		integer			true  "Timestamp"
+// @Param        to			query		integer			true  "Timestamp"
 // @Success      200		{array}		models.Metric
 // @Failure      400		{object}	models.Error
 // @Failure      404		{object}	models.Error
@@ -250,6 +251,7 @@ func (ctrl *IOTCtrl) GetRawMetric(r *gin.Context) {
 // @Tags			IOTS
 // @Accept			json
 // @Produce			json
+// @Param			iotAddr			path		string				true	"IOT address"
 // @Param			iot				body		models.MintSign		true	"Signature"
 // @Success			200				{object}	models.Metric
 // @Failure			400				{object}	models.Error

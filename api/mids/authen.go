@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Dcarbon/models"
+	"github.com/Dcarbon/iott-cloud/models"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/net/context"

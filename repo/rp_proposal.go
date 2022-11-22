@@ -1,9 +1,9 @@
 package repo
 
 import (
-	"github.com/Dcarbon/domain"
-	"github.com/Dcarbon/libs/dbutils"
-	"github.com/Dcarbon/models"
+	"github.com/Dcarbon/iott-cloud/domain"
+	"github.com/Dcarbon/iott-cloud/libs/dbutils"
+	"github.com/Dcarbon/iott-cloud/models"
 	"gorm.io/gorm"
 )
 

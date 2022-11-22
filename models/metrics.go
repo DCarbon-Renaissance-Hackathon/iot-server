@@ -3,8 +3,8 @@ package models
 import (
 	"time"
 
-	"github.com/Dcarbon/libs/dbutils"
-	"github.com/Dcarbon/libs/esign"
+	"github.com/Dcarbon/iott-cloud/libs/dbutils"
+	"github.com/Dcarbon/iott-cloud/libs/esign"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
@@ -15,6 +15,7 @@ const (
 )
 
 type ExtractMetric struct {
+	ID       string            ``
 	IsResult bool              ``
 	Warning  int               `` // Warning code
 	From     int64             `json:"from"`

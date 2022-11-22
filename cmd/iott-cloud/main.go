@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Dcarbon/api/routers"
-	"github.com/Dcarbon/libs/utils"
+	"github.com/Dcarbon/iott-cloud/api/routers"
+	"github.com/Dcarbon/iott-cloud/libs/utils"
 
-	"github.com/Dcarbon/docs"
+	"github.com/Dcarbon/iott-cloud/cmd/iott-cloud/docs"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -26,7 +26,6 @@ var config = routers.Config{
 
 // @host      localhost:8081
 // @BasePath  /api/v1
-
 func main() {
 	docs.SwaggerInfo.Title = "Internet of trusted thing cloud"
 	docs.SwaggerInfo.Version = "1.0.0"

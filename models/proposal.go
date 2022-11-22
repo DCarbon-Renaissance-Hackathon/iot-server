@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/Dcarbon/libs/dbutils"
+	"github.com/Dcarbon/iott-cloud/libs/dbutils"
 )
 
 type ProposalType int8

@@ -1,8 +1,8 @@
 package routers
 
 import (
-	"github.com/Dcarbon/api/controllers"
-	"github.com/Dcarbon/api/mids"
+	"github.com/Dcarbon/iott-cloud/api/controllers"
+	"github.com/Dcarbon/iott-cloud/api/mids"
 	"github.com/gin-gonic/gin"
 )
 

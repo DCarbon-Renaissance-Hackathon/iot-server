@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Dcarbon/domain"
-	"github.com/Dcarbon/libs/dbutils"
-	"github.com/Dcarbon/models"
+	"github.com/Dcarbon/iott-cloud/domain"
+	"github.com/Dcarbon/iott-cloud/libs/dbutils"
+	"github.com/Dcarbon/iott-cloud/models"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

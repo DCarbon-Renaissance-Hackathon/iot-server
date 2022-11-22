@@ -3,9 +3,9 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/Dcarbon/domain"
-	"github.com/Dcarbon/models"
-	"github.com/Dcarbon/repo"
+	"github.com/Dcarbon/iott-cloud/domain"
+	"github.com/Dcarbon/iott-cloud/models"
+	"github.com/Dcarbon/iott-cloud/repo"
 	"github.com/gin-gonic/gin"
 )
 

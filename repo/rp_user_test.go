@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dcarbon/domain"
-	"github.com/Dcarbon/libs/esign"
-	"github.com/Dcarbon/libs/utils"
+	"github.com/Dcarbon/iott-cloud/domain"
+	"github.com/Dcarbon/iott-cloud/libs/esign"
+	"github.com/Dcarbon/iott-cloud/libs/utils"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 

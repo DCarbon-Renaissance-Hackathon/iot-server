@@ -1,6 +1,6 @@
 package domain
 
-import "github.com/Dcarbon/models"
+import "github.com/Dcarbon/iott-cloud/models"
 
 type IProposal interface {
 	Create(*models.Proposal) error

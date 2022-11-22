@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Dcarbon/api/mids"
-	"github.com/Dcarbon/domain"
-	"github.com/Dcarbon/models"
-	"github.com/Dcarbon/repo"
+	"github.com/Dcarbon/iott-cloud/api/mids"
+	"github.com/Dcarbon/iott-cloud/domain"
+	"github.com/Dcarbon/iott-cloud/models"
+	"github.com/Dcarbon/iott-cloud/repo"
 	"github.com/gin-gonic/gin"
 )
 
