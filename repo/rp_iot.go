@@ -1,23 +1,28 @@
 package repo
 
 import (
+	"encoding/json"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/Dcarbon/iott-cloud/domain"
 	"github.com/Dcarbon/iott-cloud/libs/dbutils"
+	"github.com/Dcarbon/iott-cloud/libs/esign"
 	"github.com/Dcarbon/iott-cloud/models"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 type iotRepo struct {
-	db *gorm.DB
+	db      *gorm.DB
+	dMinter *esign.ERC712
 }
 
-func NewIOTRepo(dbUrl string) (domain.IIot, error) {
+func NewIOTRepo(dbUrl string, dMinter *esign.ERC712,
+) (domain.IIot, error) {
 	var db, err = dbutils.NewDB(dbUrl)
 	if nil != err {
 		return nil, err
@@ -54,7 +59,7 @@ func (ip *iotRepo) ChangeStatus(iotAddr string, status models.IOTStatus,
 	var err = ip.tblIOT().
 		Model(iot).
 		Clauses(clause.Returning{}).
-		Where("address = ?", iotAddr).
+		Where("address = ?", strings.ToLower(iotAddr)).
 		Update("status", status).
 		Error
 
@@ -67,7 +72,8 @@ func (ip *iotRepo) GetByBB(min, max *models.Point4326,
 	var err = ip.tblIOT().
 		Where(
 			"ST_WITHIN(pos, ST_MakeEnvelope(?, ?, ?, ?, 4326))",
-			min.Lng, min.Lat, max.Lng, max.Lat).
+			min.Lng, min.Lat, max.Lng, max.Lat,
+		).
 		Find(&iots).Error
 	return iots, models.ParsePostgresError("IOT", err)
 }
@@ -82,8 +88,17 @@ func (ip *iotRepo) CreateMetric(m *models.Metric) error {
 		return models.NewError(models.ECodeIOTNotAllowed, "Iot status is not valid")
 	}
 
-	var err = ip.tblMetrics().Create(m).Error
-	return models.ParsePostgresError("Metrics", err)
+	raw, err := hexutil.Decode(m.Data)
+	if nil != err {
+		return models.ErrBadRequest("Data must be hex")
+	}
+
+	err = json.Unmarshal(raw, &m.Extract)
+	if nil != err {
+		return models.ErrBadRequest("Invalid metric data: " + err.Error())
+	}
+
+	return models.ParsePostgresError("Metrics", ip.tblMetrics().Create(m).Error)
 }
 
 func (ip *iotRepo) GetMetrics(iot string, from, to int64,
@@ -129,7 +144,7 @@ func (ip *iotRepo) CreateMint(mint *models.MintSign,
 ) error {
 	mint.IOT = strings.ToLower(mint.IOT)
 
-	err := mint.Verify()
+	err := mint.Verify(ip.dMinter)
 	if nil != err {
 		return err
 	}

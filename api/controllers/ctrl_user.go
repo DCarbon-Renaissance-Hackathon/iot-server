@@ -12,19 +12,21 @@ import (
 )
 
 type UserCtrl struct {
-	jwtKey string
-	repo   domain.IUser
+	jwtKey        string
+	repo          domain.IUser
+	tokenDuration int64
 }
 
-func NewUserCtrl(dbUrl, jwtKey string) (*UserCtrl, error) {
+func NewUserCtrl(dbUrl, jwtKey string, tokenDuration int64) (*UserCtrl, error) {
 	userRepo, err := repo.NewUserRepo(dbUrl)
 	if nil != err {
 		return nil, err
 	}
 
 	var ctrl = &UserCtrl{
-		jwtKey: jwtKey,
-		repo:   userRepo,
+		jwtKey:        jwtKey,
+		repo:          userRepo,
+		tokenDuration: tokenDuration,
 	}
 	return ctrl, nil
 }
@@ -56,7 +58,7 @@ func (ctrl *UserCtrl) Login(r *gin.Context) {
 		return
 	}
 
-	token, err := mids.EncodeJWT(ctrl.jwtKey, user)
+	token, err := mids.EncodeJWT(ctrl.jwtKey, user, ctrl.tokenDuration)
 	if nil != err {
 		r.JSON(500, models.ErrInternal(err))
 		return

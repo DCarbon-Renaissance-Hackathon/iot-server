@@ -7,23 +7,32 @@ import (
 )
 
 type Config struct {
-	Port   int
-	DBUrl  string
-	JwtKey string
+	Port          int
+	DBUrl         string
+	JwtKey        string
+	TokenDuration int64
+	ChainID       int64
+	CarbonVersion string
+	CarbonAddress string
 }
 
 type Router struct {
 	*gin.Engine
 	config       Config
 	auth         *mids.A2M
-	iotCtrl      *controllers.IOTCtrl
+	iotCtrl      *controllers.IotCtrl
 	projectCtrl  *controllers.ProjectCtrl
 	userCtrl     *controllers.UserCtrl
 	proposalCtrl *controllers.ProposalCtrl
 }
 
 func NewRouter(config Config) (*Router, error) {
-	var iotCtrl, err = controllers.NewIOTCtrl(config.DBUrl)
+	var iotCtrl, err = controllers.NewIotCtrl(
+		config.DBUrl,
+		config.ChainID,
+		config.CarbonVersion,
+		config.CarbonAddress,
+	)
 	if nil != err {
 		return nil, err
 	}
@@ -38,7 +47,7 @@ func NewRouter(config Config) (*Router, error) {
 		return nil, err
 	}
 
-	userCtrl, err := controllers.NewUserCtrl(config.DBUrl, config.JwtKey)
+	userCtrl, err := controllers.NewUserCtrl(config.DBUrl, config.JwtKey, config.TokenDuration)
 	if nil != err {
 		return nil, err
 	}

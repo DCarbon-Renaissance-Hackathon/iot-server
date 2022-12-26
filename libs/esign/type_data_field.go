@@ -20,6 +20,7 @@ const (
 	TypedDataBool    TypedData = "bool"
 	TypedDataString  TypedData = "string"
 	TypedDataBytes   TypedData = "bytes"
+	TypedDataUint256 TypedData = "uint256"
 	TypedDataStruct  TypedData = "struct"
 )
 

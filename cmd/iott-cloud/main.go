@@ -14,9 +14,13 @@ import (
 )
 
 var config = routers.Config{
-	Port:   utils.IntEnv("DCENTER_PORT", 8081),
-	DBUrl:  utils.StringEnv("DB_URL", ""),
-	JwtKey: utils.StringEnv("JWT_KEY", ""),
+	Port:          utils.IntEnv("DCENTER_PORT", 8081),
+	DBUrl:         utils.StringEnv("DB_URL", ""),
+	JwtKey:        utils.StringEnv("JWT_KEY", ""),
+	TokenDuration: utils.Int64Env("TOKEN_DURATION", 1*365*86400),
+	ChainID:       utils.Int64Env("CHAIN_ID", 1),
+	CarbonVersion: utils.StringEnv("CARBON_VERSION", "1"),
+	CarbonAddress: utils.StringEnv("CARBON_ADDRESS", ""),
 }
 
 // @title           Swagger Example API
@@ -32,9 +36,9 @@ func main() {
 	docs.SwaggerInfo.Description = "Internet of trusted thing cloud"
 	docs.SwaggerInfo.BasePath = "/api/v1"
 	docs.SwaggerInfo.Schemes = []string{
-		utils.StringEnv("DOMAIN_SCHEME", "http"),
+		utils.StringEnv("SERVER_SCHEME", "http"),
 	}
-	docs.SwaggerInfo.Host = utils.StringEnv("DOMAIN", "localhost:8081")
+	docs.SwaggerInfo.Host = utils.StringEnv("SERVER_HOST", "localhost:8081")
 
 	var rt, err = routers.NewRouter(config)
 	utils.PanicError("Create router", err)

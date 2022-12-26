@@ -22,7 +22,7 @@ var rolesTable = map[string]map[string]bool{
 
 type customClaim struct {
 	jwt.StandardClaims
-	Model *ClaimModel
+	*ClaimModel
 }
 
 type ClaimModel struct {
@@ -71,7 +71,7 @@ func (a2 *A2M) HandlerFunc(r *gin.Context) {
 	r.Request = r.Request.WithContext(ctx)
 }
 
-//DecodeJWT :
+// DecodeJWT :
 func DecodeJWT(key string, token string) (*ClaimModel, error) {
 	var claim = &customClaim{}
 	jtoken, err := jwt.ParseWithClaims(
@@ -88,20 +88,21 @@ func DecodeJWT(key string, token string) (*ClaimModel, error) {
 	if !jtoken.Valid {
 		return nil, models.NewError(models.ECodeUnauthorized, "token is invalid")
 	}
-	return claim.Model, nil
+
+	return claim.ClaimModel, nil
 }
 
-//EncodeJWT :
-func EncodeJWT(key string, user *models.User) (string, error) {
+// EncodeJWT :
+func EncodeJWT(key string, user *models.User, duration int64) (string, error) {
 	var claim = &customClaim{
-		Model: &ClaimModel{
+		ClaimModel: &ClaimModel{
 			Id:         user.ID,
 			Role:       user.Role,
 			Name:       user.Name,
 			EthAddress: user.EAddress,
 		},
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Unix() + 86400,
+			ExpiresAt: time.Now().Unix() + duration,
 		},
 	}
 	var token = jwt.NewWithClaims(jwt.SigningMethodHS256, claim)

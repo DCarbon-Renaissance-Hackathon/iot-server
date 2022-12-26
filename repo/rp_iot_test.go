@@ -19,8 +19,24 @@ var irepo = mustIOTRepo()
 var iotPrv = utils.StringEnv("IOT_PRIVATE", "")
 var iotAddr = utils.StringEnv("IOT_ADDRESS", "")
 
+var testDomainMinter = esign.MustNewERC712(
+	&esign.TypedDataDomain{
+		Name:              "Carbon",
+		Version:           "1",
+		ChainId:           1,
+		VerifyingContract: "0xA1E064Fd61B76cf11CE3b5816344f861b6318cea",
+	},
+	esign.MustNewTypedDataField(
+		"Mint",
+		esign.TypedDataStruct,
+		esign.MustNewTypedDataField("iot", esign.TypedDataAddress),
+		esign.MustNewTypedDataField("amount", "uint256"),
+		esign.MustNewTypedDataField("nonce", "uint256"),
+	),
+)
+
 func mustIOTRepo() domain.IIot {
-	irp, err := NewIOTRepo(dbUrl)
+	irp, err := NewIOTRepo(dbUrl, testDomainMinter)
 	if nil != err {
 		panic(err.Error())
 	}
@@ -31,10 +47,10 @@ func TestIOTCreate(t *testing.T) {
 	err := irepo.Create(&models.IOTDevice{
 		Project: 0,
 		Type:    models.IOTTypeDungElectric,
-		Address: iotAddr,
+		Address: "0x1064F6f232bdD6E38a248C0C3a1456b023f05e3B",
 		Position: models.Point4326{
 			Lat: 21.015462,
-			Lng: 105.804904,
+			Lng: 105.704904,
 		},
 	})
 
@@ -92,8 +108,8 @@ func TestIOTCreateMetrics(t *testing.T) {
 	metric.Extract = models.ExtractMetric{}
 	utils.Dump("", metric)
 
-	// err = irepo.CreateMetric(metric)
-	// utils.PanicError("Create iot metrics ", err)
+	err = irepo.CreateMetric(metric)
+	utils.PanicError("Create iot metrics ", err)
 }
 
 func TestGetMetrics(t *testing.T) {
@@ -120,7 +136,7 @@ func TestCreateMint(t *testing.T) {
 		Amount: "0xffaaa1",
 		IOT:    iotAddr,
 	}
-	_, err := sign.Sign(iotPrv)
+	_, err := sign.Sign(testDomainMinter, iotPrv)
 	utils.PanicError("TestCreateMint", err)
 
 	utils.Dump("MintSign: ", sign)

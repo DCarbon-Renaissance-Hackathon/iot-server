@@ -7,21 +7,21 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-var minterDomain = esign.MustNewERC712(
-	&esign.TypedDataDomain{
-		Name:              "Carbon",
-		Version:           "1",
-		ChainId:           1,
-		VerifyingContract: "0xA1E064Fd61B76cf11CE3b5816344f861b6318cea",
-	},
-	esign.MustNewTypedDataField(
-		"Mint",
-		esign.TypedDataStruct,
-		esign.MustNewTypedDataField("iot", esign.TypedDataAddress),
-		esign.MustNewTypedDataField("amount", "uint256"),
-		esign.MustNewTypedDataField("nonce", "uint256"),
-	),
-)
+// var minterDomain = esign.MustNewERC712(
+// 	&esign.TypedDataDomain{
+// 		Name:              "Carbon",
+// 		Version:           "1",
+// 		ChainId:           1,
+// 		VerifyingContract: "0xA1E064Fd61B76cf11CE3b5816344f861b6318cea",
+// 	},
+// 	esign.MustNewTypedDataField(
+// 		"Mint",
+// 		esign.TypedDataStruct,
+// 		esign.MustNewTypedDataField("iot", esign.TypedDataAddress),
+// 		esign.MustNewTypedDataField("amount", "uint256"),
+// 		esign.MustNewTypedDataField("nonce", "uint256"),
+// 	),
+// )
 
 type MintSign struct {
 	ID        int64     `json:"id" gorm:"primary_key"` //
@@ -38,8 +38,8 @@ type MintSign struct {
 func (*MintSign) TableName() string { return TableNameMintSign }
 
 // prvStr: private key (hex)
-func (msign *MintSign) Sign(prvStr string) ([]byte, error) {
-	signedRaw, err := minterDomain.Sign(prvStr, map[string]interface{}{
+func (msign *MintSign) Sign(dMinter *esign.ERC712, prvStr string) ([]byte, error) {
+	signedRaw, err := dMinter.Sign(prvStr, map[string]interface{}{
 		"iot":    msign.IOT,
 		"amount": msign.Amount,
 		"nonce":  msign.Nonce,
@@ -55,7 +55,7 @@ func (msign *MintSign) Sign(prvStr string) ([]byte, error) {
 	return signedRaw, nil
 }
 
-func (msign *MintSign) Verify() error {
+func (msign *MintSign) Verify(dMinter *esign.ERC712) error {
 	var data = map[string]interface{}{
 		"iot":    msign.IOT,
 		"amount": msign.Amount,
@@ -72,7 +72,7 @@ func (msign *MintSign) Verify() error {
 		return NewError(ECodeIOTInvalidMintSign, "Invalid mint sign: "+err.Error())
 	}
 
-	err = minterDomain.Verify(msign.IOT, signed, data)
+	err = dMinter.Verify(msign.IOT, signed, data)
 	if nil != err {
 		return NewError(ECodeIOTInvalidMintSign, "Invalid mint sign: "+err.Error())
 	}
