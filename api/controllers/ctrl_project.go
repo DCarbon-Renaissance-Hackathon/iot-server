@@ -14,7 +14,7 @@ type ProjectCtrl struct {
 }
 
 func NewProjectCtrl(dbUrl string) (*ProjectCtrl, error) {
-	var projectRepo, err = repo.NewProjectRepo(dbUrl)
+	var projectRepo, err = repo.NewProjectRepo()
 	if nil != err {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (ctrl *ProjectCtrl) GetByID(r *gin.Context) {
 		return
 	}
 
-	data, err := ctrl.repo.GetById(id)
+	data, err := ctrl.repo.GetById(id, "vi", true)
 	if nil != err {
 		r.JSON(500, err)
 	} else {
@@ -106,7 +106,11 @@ func (ctrl *ProjectCtrl) GetList(r *gin.Context) {
 	}
 
 	owner := r.Query("owner")
-	data, err := ctrl.repo.GetList(skip, limit, owner)
+	data, err := ctrl.repo.GetList(&domain.RFilterProject{
+		Skip:  int(skip),
+		Limit: int(limit),
+		Owner: owner,
+	})
 	if nil != err {
 		r.JSON(500, err)
 	} else {

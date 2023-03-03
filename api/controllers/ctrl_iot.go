@@ -36,7 +36,7 @@ func NewIotCtrl(dbUrl string, chainID int64, cbVersion string, cbAddr string) (*
 		return nil, err
 	}
 
-	irepo, err := repo.NewIOTRepo(dbUrl, dMinter)
+	irepo, err := repo.NewIOTRepo(dMinter)
 	if nil != err {
 		return nil, err
 	}

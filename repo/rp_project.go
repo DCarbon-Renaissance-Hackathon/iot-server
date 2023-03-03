@@ -2,23 +2,25 @@ package repo
 
 import (
 	"github.com/Dcarbon/iott-cloud/domain"
-	"github.com/Dcarbon/iott-cloud/libs/dbutils"
 	"github.com/Dcarbon/iott-cloud/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type projectRepo struct {
 	db *gorm.DB
 }
 
-func NewProjectRepo(dbUrl string) (domain.IProject, error) {
-	var db, err = dbutils.NewDB(dbUrl)
+func NewProjectRepo() (domain.IProject, error) {
+	var db, err = getSingletonDB()
 	if nil != err {
 		return nil, err
 	}
 
 	err = db.AutoMigrate(
 		&models.Project{},
+		&models.ProjectDescription{},
+		&models.ProjectSpec{},
 	)
 	if nil != err {
 		return nil, err
@@ -30,33 +32,69 @@ func NewProjectRepo(dbUrl string) (domain.IProject, error) {
 	return pp, nil
 }
 
-func (pp *projectRepo) Create(project *models.Project) error {
-	var err = pp.tblProject().Create(project).Error
+func (pRepo *projectRepo) Create(project *models.Project) error {
+	var err = pRepo.tblProject().Create(project).Error
 
 	return models.ParsePostgresError("Project", err)
 }
 
-func (pp *projectRepo) GetById(id int64) (*models.Project, error) {
+func (pRepo *projectRepo) UpdateDesc(req *models.ProjectDescription,
+) (*models.ProjectDescription, error) {
+	var err = pRepo.tblProjectDesc().
+		Clauses(
+			clause.OnConflict{
+				Columns:   []clause.Column{{Name: "project_id"}, {Name: "language"}},
+				UpdateAll: true,
+			},
+			clause.Insert{},
+		).
+		Create(req).Error
+	if nil != err {
+		return nil, models.ParsePostgresError("Update project desc", err)
+	}
+	return req, nil
+}
+
+func (pRepo *projectRepo) UpdateSpec(req *models.ProjectSpec,
+) (*models.ProjectSpec, error) {
+	var err = pRepo.tblProjectSpec().
+		Clauses(
+			clause.OnConflict{
+				Columns:   []clause.Column{{Name: "project_id"}},
+				DoUpdates: clause.AssignmentColumns([]string{"specs", "updated_at"}),
+			},
+		).Create(req).Error
+	if nil != err {
+		return nil, models.ParsePostgresError("Update project desc", err)
+	}
+	return req, nil
+}
+
+func (pRepo *projectRepo) GetById(id int64, lang string, withSpec bool) (*models.Project, error) {
 	var project = &models.Project{}
-	var err = pp.tblProject().
-		Where("id = ?", id).
-		First(project).
-		Error
+	var query = pRepo.tblProject().Where("id = ?", id)
+	if lang != "" {
+		query.Preload("Descs", func(tx *gorm.DB) *gorm.DB {
+			return tx.Where("language = ?", lang)
+		})
+	}
+	if withSpec {
+		query.Preload("Specs")
+	}
+	var err = query.First(project).Error
 
 	return project, models.ParsePostgresError("Project", err)
 }
 
-func (pp *projectRepo) GetList(skip, limit int64, owner string,
+func (pRepo *projectRepo) GetList(filter *domain.RFilterProject,
 ) ([]*models.Project, error) {
-	var tbl = pp.tblProject()
-	if skip > 0 {
-		tbl = tbl.Offset(int(skip))
+	var tbl = pRepo.tblProject().Offset(filter.Skip)
+	if filter.Limit > 0 {
+		tbl = tbl.Limit(filter.Limit)
 	}
-	if limit > 0 {
-		tbl = tbl.Limit(int(limit))
-	}
-	if owner != "" {
-		tbl = tbl.Where("owner = ?", owner)
+
+	if filter.Owner != "" {
+		tbl = tbl.Where("owner = ?", filter.Owner)
 	}
 
 	var data = make([]*models.Project, 0)
@@ -67,10 +105,10 @@ func (pp *projectRepo) GetList(skip, limit int64, owner string,
 	return data, nil
 }
 
-func (pp *projectRepo) GetByBB(min, max *models.Point4326, owner string,
+func (pRepo *projectRepo) GetByBB(min, max *models.Point4326, owner string,
 ) ([]*models.Project, error) {
 	var data = make([]*models.Project, 0)
-	var err = pp.tblProject().
+	var err = pRepo.tblProject().
 		Where(
 			"ST_WITHIN(pos, ST_MakeEnvelope(?, ?, ?, ?, 4326))",
 			min.Lng, min.Lat, max.Lng, max.Lat).
@@ -78,24 +116,43 @@ func (pp *projectRepo) GetByBB(min, max *models.Point4326, owner string,
 	return data, models.ParsePostgresError("Project", err)
 }
 
-func (pp *projectRepo) GetByID(id int64) (*models.Project, error) {
+func (pRepo *projectRepo) GetByID(id int64) (*models.Project, error) {
 	var data = &models.Project{}
-	var err = pp.tblProject().Where("id = ?", id).First(data).Error
+	var err = pRepo.tblProject().Where("id = ?", id).First(data).Error
 	if nil != err {
 		return nil, models.ParsePostgresError("Project", err)
 	}
 	return data, nil
 }
 
-func (pp *projectRepo) ChangeStatus(id string, status models.ProjectStatus,
+func (pRepo *projectRepo) ChangeStatus(id string, status models.ProjectStatus,
 ) error {
-	var err = pp.tblProject().
+	var err = pRepo.tblProject().
 		Where("id = ?", id).
 		Update("status", status).
 		Error
 	return models.ParsePostgresError("Project", err)
 }
 
-func (pp *projectRepo) tblProject() *gorm.DB {
-	return pp.db.Table(models.TableNameProject)
+func (pRepo *projectRepo) GetOwner(projectId int64) (string, error) {
+	var owner = ""
+	var err = pRepo.tblProject().
+		Where("id = ?", projectId).
+		Pluck("owner", &owner).Error
+	if nil != err {
+		return "", models.ParsePostgresError("Get owner ", err)
+	}
+	return owner, nil
+}
+
+func (pRepo *projectRepo) tblProject() *gorm.DB {
+	return pRepo.db.Table(models.TableNameProject)
+}
+
+func (pRepo *projectRepo) tblProjectDesc() *gorm.DB {
+	return pRepo.db.Table(models.TableNameProjectDesc)
+}
+
+func (pRepo *projectRepo) tblProjectSpec() *gorm.DB {
+	return pRepo.db.Table(models.TableNameProjectSpec)
 }

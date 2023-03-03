@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Dcarbon/iott-cloud/domain"
-	"github.com/Dcarbon/iott-cloud/libs/dbutils"
 	"github.com/Dcarbon/iott-cloud/libs/esign"
 	"github.com/Dcarbon/iott-cloud/models"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -21,9 +20,9 @@ type iotRepo struct {
 	dMinter *esign.ERC712
 }
 
-func NewIOTRepo(dbUrl string, dMinter *esign.ERC712,
+func NewIOTRepo(dMinter *esign.ERC712,
 ) (domain.IIot, error) {
-	var db, err = dbutils.NewDB(dbUrl)
+	var db, err = getSingletonDB()
 	if nil != err {
 		return nil, err
 	}
@@ -64,6 +63,16 @@ func (ip *iotRepo) ChangeStatus(iotAddr string, status models.IOTStatus,
 		Error
 
 	return iot, models.ParsePostgresError("IOT", err)
+}
+
+func (ip *iotRepo) GetIOT(id int64) (*models.IOTDevice, error) {
+	var iot = &models.IOTDevice{}
+	var err = ip.tblIOT().Where("id = ?", id).First(iot).Error
+	if nil != err {
+		return iot, models.ParsePostgresError("IOT", err)
+	}
+
+	return iot, nil
 }
 
 func (ip *iotRepo) GetByBB(min, max *models.Point4326,

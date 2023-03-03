@@ -3,6 +3,7 @@ package routers
 import (
 	"github.com/Dcarbon/iott-cloud/api/controllers"
 	"github.com/Dcarbon/iott-cloud/api/mids"
+	"github.com/Dcarbon/iott-cloud/repo"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,7 +28,12 @@ type Router struct {
 }
 
 func NewRouter(config Config) (*Router, error) {
-	var iotCtrl, err = controllers.NewIotCtrl(
+	err := repo.InitRepo(config.DBUrl)
+	if nil != err {
+		return nil, err
+	}
+
+	iotCtrl, err := controllers.NewIotCtrl(
 		config.DBUrl,
 		config.ChainID,
 		config.CarbonVersion,
@@ -81,7 +87,7 @@ func NewRouter(config Config) (*Router, error) {
 			mids.NewA2(config.JwtKey, "iot-change-status").HandlerFunc,
 			iotCtrl.ChangeStatus,
 		)
-		iotRoute.GET("/", iotCtrl.GetByBB)
+		iotRoute.GET("/by-bb", iotCtrl.GetByBB)
 
 		iotRoute.POST("/:iotAddr/metrics", iotCtrl.CreateMetric)
 		iotRoute.GET("/:iotAddr/metrics", iotCtrl.GetMetrics)

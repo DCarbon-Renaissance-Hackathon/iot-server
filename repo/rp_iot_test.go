@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-var irepo = mustIOTRepo()
+var iotRepoTest domain.IIot
 var iotPrv = utils.StringEnv("IOT_PRIVATE", "")
 var iotAddr = utils.StringEnv("IOT_ADDRESS", "")
 
@@ -35,16 +35,18 @@ var testDomainMinter = esign.MustNewERC712(
 	),
 )
 
-func mustIOTRepo() domain.IIot {
-	irp, err := NewIOTRepo(dbUrl, testDomainMinter)
+func init() {
+	err := InitRepo(dbUrlTest)
+	utils.PanicError("", err)
+
+	iotRepoTest, err = NewIOTRepo(testDomainMinter)
 	if nil != err {
 		panic(err.Error())
 	}
-	return irp
 }
 
 func TestIOTCreate(t *testing.T) {
-	err := irepo.Create(&models.IOTDevice{
+	err := iotRepoTest.Create(&models.IOTDevice{
 		Project: 0,
 		Type:    models.IOTTypeDungElectric,
 		Address: "0x1064F6f232bdD6E38a248C0C3a1456b023f05e3B",
@@ -58,7 +60,7 @@ func TestIOTCreate(t *testing.T) {
 }
 
 func TestIOTChangeStatus(t *testing.T) {
-	var data, err = irepo.ChangeStatus(
+	var data, err = iotRepoTest.ChangeStatus(
 		"0x1064F6f232bdD6E38a248C0C3a1456b023f05e3B",
 		models.IOTStatusSuccess,
 	)
@@ -66,8 +68,14 @@ func TestIOTChangeStatus(t *testing.T) {
 	utils.Dump("TestIOTChangeStatus", data)
 }
 
+func TestIOTGetIOT(t *testing.T) {
+	var data, err = iotRepoTest.GetIOT(1)
+	utils.PanicError("TestIOTGetIOT", err)
+	utils.Dump("TestIOTGetIOT", data)
+}
+
 func TestIOTGetByBB(t *testing.T) {
-	var data, err = irepo.GetByBB(
+	var data, err = iotRepoTest.GetByBB(
 		&models.Point4326{Lng: 104.1, Lat: 20},
 		&models.Point4326{Lng: 106.1, Lat: 22},
 	)
@@ -108,14 +116,14 @@ func TestIOTCreateMetrics(t *testing.T) {
 	metric.Extract = models.ExtractMetric{}
 	utils.Dump("", metric)
 
-	err = irepo.CreateMetric(metric)
+	err = iotRepoTest.CreateMetric(metric)
 	utils.PanicError("Create iot metrics ", err)
 }
 
 func TestGetMetrics(t *testing.T) {
 	var now = time.Now().Unix()
 	var from = now - 86400*365*2
-	var data, err = irepo.GetMetrics(
+	var data, err = iotRepoTest.GetMetrics(
 		"0x6CFF13d489623029d4d102Fa81947527E175BA8D",
 		from,
 		now,
@@ -125,7 +133,7 @@ func TestGetMetrics(t *testing.T) {
 }
 
 func TestGetRawMetrics(t *testing.T) {
-	var data, err = irepo.GetRawMetric("c419eb47-250e-44ec-98e1-f86b1a813520")
+	var data, err = iotRepoTest.GetRawMetric("c419eb47-250e-44ec-98e1-f86b1a813520")
 	utils.PanicError("TestGetRawMetrics", err)
 	utils.Dump("TestGetRawMetrics", data)
 }
@@ -145,7 +153,7 @@ func TestCreateMint(t *testing.T) {
 }
 
 func TestGetMint(t *testing.T) {
-	var signeds, err = irepo.GetMintSigns(iotAddr, 0)
+	var signeds, err = iotRepoTest.GetMintSigns(iotAddr, 0)
 	utils.PanicError("TestGetMint", err)
 	utils.Dump("TestGetMint", signeds)
 }

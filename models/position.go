@@ -22,7 +22,7 @@ const (
 // where ST_DWithin(states."location", ST_SetSRID(ST_MakePoint(105.834160, 21.027763), 4326), 1)
 // order by ST_Distance(states."location", ST_SetSRID(ST_MakePoint(105.834160, 21.027763), 4326));
 
-//Point4326 :
+// Point4326 :
 type Point4326 struct {
 	Lat float64 `json:"lat"` // vi tuyen (pgis: y)
 	Lng float64 `json:"lng"` // kinh tuyen:(pgis: x)
@@ -32,7 +32,7 @@ func (p *Point4326) String() string {
 	return fmt.Sprintf("SRID=4326;POINT(%v %v)", p.Lng, p.Lat)
 }
 
-//Scan :
+// Scan :
 func (p *Point4326) Scan(val interface{}) error {
 	var s = ""
 	switch t := val.(type) {
@@ -51,12 +51,12 @@ func (p *Point4326) Scan(val interface{}) error {
 	return p.fromEWKB(s)
 }
 
-//Value :
+// Value :
 func (p Point4326) Value() (driver.Value, error) {
 	return p.String(), nil
 }
 
-//MakePoint :
+// MakePoint :
 func (p *Point4326) MakePoint() string {
 	return fmt.Sprintf("ST_SetSRID(ST_MakePoint(%f, %f), 4326)", p.Lng, p.Lat)
 }
@@ -88,6 +88,7 @@ func (p *Point4326) fromEWKB(val string) error {
 	if err != nil {
 		return err
 	}
+
 	r := bytes.NewReader(b)
 	var wkbByteOrder uint8
 	if err := binary.Read(r, binary.LittleEndian, &wkbByteOrder); err != nil {

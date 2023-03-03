@@ -12,20 +12,19 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-var dbUrl = utils.StringEnv("DB_URL", "")
-var uRepo = mustNewUserRepo()
+var uRepo domain.IUser
 
 var adminAddr = utils.StringEnv("ADMIN_ADDRESS", "")
 var adminPrv = utils.StringEnv("ADMIN_PRIVATE", "")
 
 var customPrv = utils.StringEnv("ADMIN_PRIVATE", "")
 
-func mustNewUserRepo() domain.IUser {
-	var up, err = NewUserRepo(dbUrl)
-	if nil != err {
-		panic(err.Error())
-	}
-	return up
+func init() {
+	err := InitRepo(dbUrlTest)
+	utils.PanicError("", err)
+
+	uRepo, err = NewUserRepo(dbUrlTest)
+	utils.PanicError("", err)
 }
 
 func TestLogin(t *testing.T) {

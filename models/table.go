@@ -1,10 +1,14 @@
 package models
 
 const (
-	TableNameMetrics  = "metrics"
-	TableNameProposal = "proposals"
-	TableNameUser     = "users"
-	TableNameProject  = "projects"
+	TableNameProposal    = "proposals"
+	TableNameProject     = "projects"
+	TableNameProjectDesc = "projects_desc"
+	TableNameProjectSpec = "projects_specs"
+
 	TableNameIOT      = "iots"
+	TableNameMetrics  = "metrics"
 	TableNameMintSign = "mint_sign"
+
+	TableNameUser = "users"
 )
