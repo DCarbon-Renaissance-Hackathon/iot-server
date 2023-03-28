@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Dcarbon/iott-cloud/api/routers"
-	"github.com/Dcarbon/iott-cloud/libs/utils"
+	"github.com/Dcarbon/go-shared/libs/utils"
+	"github.com/Dcarbon/iott-cloud/internal/api/routers"
 
 	"github.com/Dcarbon/iott-cloud/cmd/iott-cloud/docs"
 
