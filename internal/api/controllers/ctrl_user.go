@@ -97,7 +97,7 @@ func (ctrl *UserCtrl) Update(r *gin.Context) {
 	}
 
 	user.ID = current.ID
-	user.EAddress = ""
+	user.Address = ""
 	user, err = ctrl.repo.Update(user.ID, user.Name)
 	if nil != err {
 		r.JSON(500, err)
@@ -108,9 +108,9 @@ func (ctrl *UserCtrl) Update(r *gin.Context) {
 }
 
 type rLogin struct {
-	Address   string `json:"address"`
-	Signature string `json:"signature"`
-	Now       int64  `json:"now"`
+	Address   models.EthAddress `json:"address"`
+	Signature string            `json:"signature"`
+	Now       int64             `json:"now"`
 }
 
 type rsLogin struct {

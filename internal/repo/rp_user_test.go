@@ -9,12 +9,13 @@ import (
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/go-shared/libs/utils"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
+	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 var uRepo domain.IUser
 
-var adminAddr = utils.StringEnv("ADMIN_ADDRESS", "")
+var adminAddr = models.EthAddress(utils.StringEnv("ADMIN_ADDRESS", ""))
 var adminPrv = utils.StringEnv("ADMIN_PRIVATE", "")
 
 var customPrv = utils.StringEnv("ADMIN_PRIVATE", "")

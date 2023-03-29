@@ -12,12 +12,8 @@ type projectRepo struct {
 }
 
 func NewProjectRepo() (domain.IProject, error) {
-	var db, err = getSingletonDB()
-	if nil != err {
-		return nil, err
-	}
-
-	err = db.AutoMigrate(
+	var db = getSingletonDB()
+	err := db.AutoMigrate(
 		&models.Project{},
 		&models.ProjectDescription{},
 		&models.ProjectSpec{},

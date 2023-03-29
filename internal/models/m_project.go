@@ -17,27 +17,15 @@ const (
 	ProjectStatusActived ProjectStatus = 20
 )
 
-type ProjectType int
-
-const (
-	ProjectTypeNone        ProjectType = 0
-	ProjectTypeWindPower   ProjectType = 10
-	ProjectTypeSolarPower  ProjectType = 11
-	ProjectTypeBurnMethane ProjectType = 20
-	ProjectTypeFertilizer  ProjectType = 30
-	ProjectTypeTrash       ProjectType = 31
-)
-
 type Project struct {
 	ID        int64                 `json:"id" gorm:"primaryKey"`                        //
-	Owner     string                `json:"owner" gorm:"index"`                          // ETH address
+	Owner     EthAddress            `json:"owner" gorm:"index"`                          // ETH address
 	Pos       *Point4326            `json:"pos" gorm:"index;type:geometry(POINT, 4326)"` //
-	Status    ProjectStatus         `json:"status" `                                     //
-	Type      ProjectType           `json:"type" `                                       //
-	Descs     []*ProjectDescription `json:"descs" gorm:"foreignKey:ProjectID"`
-	Specs     *ProjectSpec          `json:"specs" gorm:"foreignKey:ProjectID"`
-	CreatedAt time.Time             `json:"createdAt"` //
-	UpdatedAt time.Time             `json:"updatedAt"` //
+	Status    ProjectStatus         `json:"status"`                                      //
+	Descs     []*ProjectDescription `json:"descs" gorm:"foreignKey:ProjectID"`           //
+	Specs     *ProjectSpec          `json:"specs" gorm:"foreignKey:ProjectID"`           //
+	CreatedAt time.Time             `json:"createdAt"`                                   //
+	UpdatedAt time.Time             `json:"updatedAt"`                                   //
 }
 
 func (*Project) TableName() string { return TableNameProject }

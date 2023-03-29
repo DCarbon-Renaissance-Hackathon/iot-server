@@ -99,7 +99,7 @@ func EncodeJWT(key string, user *models.User, duration int64) (string, error) {
 			Id:         user.ID,
 			Role:       user.Role,
 			Name:       user.Name,
-			EthAddress: user.EAddress,
+			EthAddress: string(user.Address),
 		},
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Unix() + duration,

@@ -1,15 +1,14 @@
 # Images name: viettin/mai-admin:golang-base
 
-FROM golang:1.15-alpine
+FROM golang:1.19-alpine
 
-ENV PATH=$PATH:$GOPATH/bin
-RUN apk update && apk add --no-cache git ca-certificates
+RUN apk update && apk add --no-cache git ca-certificates alpine-sdk
 
-RUN go get -u github.com/swaggo/swag && \
-    go get -u golang.org/x/crypto/bcrypt && \
-    mkdir -p /go/src/github.com/D/gen/proto && \
+RUN go install github.com/swaggo/swag/cmd/swag@latest && \
     echo "Build proto done"
 
-WORKDIR /Dcarbon
+WORKDIR /dcarbon
 COPY . .
 RUN go mod download
+
+ENV PATH=$PATH:$GOPATH/bin

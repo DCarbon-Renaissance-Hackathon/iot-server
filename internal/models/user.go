@@ -5,10 +5,10 @@ const (
 )
 
 type User struct {
-	ID       int64  `json:"id" gorm:"primary_key"`
-	Role     string `json:"role"`
-	Name     string `json:"name" `
-	EAddress string `json:"eaddress" `
+	ID      int64      `json:"id" gorm:"primary_key"`
+	Role    string     `json:"role"`
+	Name    string     `json:"name" `
+	Address EthAddress `json:"address" ` // Eth address
 }
 
 func (*User) TableName() string { return TableNameUser }

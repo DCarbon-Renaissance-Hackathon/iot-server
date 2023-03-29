@@ -22,12 +22,8 @@ type iotRepo struct {
 
 func NewIOTRepo(dMinter *esign.ERC712,
 ) (domain.IIot, error) {
-	var db, err = getSingletonDB()
-	if nil != err {
-		return nil, err
-	}
-
-	err = db.AutoMigrate(
+	var db = getSingletonDB()
+	err := db.AutoMigrate(
 		&models.IOTDevice{},
 		&models.Metric{},
 		&models.MintSign{},
@@ -44,7 +40,7 @@ func NewIOTRepo(dMinter *esign.ERC712,
 
 func (ip *iotRepo) Create(iot *models.IOTDevice) error {
 	iot.ID = 0
-	iot.Address = strings.ToLower(iot.Address)
+	// iot.Address = strings.ToLower(iot.Address)
 	var err = ip.tblIOT().Create(iot).Error
 	if nil != err {
 		return models.ParsePostgresError("IOT", err)
@@ -129,7 +125,6 @@ func (ip *iotRepo) GetMetrics(iot string, from, to int64,
 
 func (ip *iotRepo) GetRawMetric(metricId string,
 ) (*models.Metric, error) {
-
 	var metric = &models.Metric{}
 	var err = ip.tblMetrics().
 		Where("id = ?", metricId).

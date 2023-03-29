@@ -19,6 +19,7 @@ func InitRepo(dbUrl string) error {
 		if nil != err {
 			return err
 		}
+
 		// singDB.Logger = logger.New(
 		// 	log.New(os.Stdout, "\r\n", log.LstdFlags),
 		// 	logger.Config{
@@ -30,9 +31,9 @@ func InitRepo(dbUrl string) error {
 	return nil
 }
 
-func getSingletonDB() (*gorm.DB, error) {
+func getSingletonDB() *gorm.DB {
 	if nil == singDB {
-		return nil, errInit
+		panic(errInit)
 	}
-	return singDB, nil
+	return singDB
 }

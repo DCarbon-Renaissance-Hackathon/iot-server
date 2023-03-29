@@ -48,7 +48,7 @@ func init() {
 func TestIOTCreate(t *testing.T) {
 	err := iotRepoTest.Create(&models.IOTDevice{
 		Project: 0,
-		Type:    models.IOTTypeDungElectric,
+		Type:    models.IOTTypeBurnMethane,
 		Address: "0x1064F6f232bdD6E38a248C0C3a1456b023f05e3B",
 		Position: models.Point4326{
 			Lat: 21.015462,

@@ -28,7 +28,6 @@ func TestProjectCreate(t *testing.T) {
 			Lng: 105.804904,
 		},
 		Status: models.ProjectStatusRegister,
-		Type:   models.ProjectTypeBurnMethane,
 	}
 	err := pRepoTest.Create(p)
 	utils.PanicError("", err)

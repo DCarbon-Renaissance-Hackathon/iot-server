@@ -32,20 +32,20 @@ func NewUserRepo(dbUrl string) (domain.IUser, error) {
 	return up, nil
 }
 
-func (up *userRepo) Login(addr string, signedHex, org string,
+func (up *userRepo) Login(addr models.EthAddress, signedHex, org string,
 ) (*models.User, error) {
 	var signedBytes, err = hexutil.Decode(signedHex)
 	if nil != err {
 		return nil, models.ErrBadRequest("Invalid sign " + err.Error())
 	}
 
-	err = esign.VerifyPersonalSign(addr, []byte(org), signedBytes)
+	err = esign.VerifyPersonalSign(string(addr), []byte(org), signedBytes)
 	if nil != err {
 		return nil, models.ErrBadRequest("Invalid signed" + err.Error())
 	}
 
 	var user = &models.User{
-		EAddress: addr,
+		Address: addr,
 	}
 	err = up.tblUser().
 		Where("e_address = ?", addr).
