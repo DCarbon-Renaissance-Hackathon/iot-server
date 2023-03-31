@@ -8,12 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-type TrackingType int
-
-const (
-	TrackingTypeFlow TrackingType = 1
-)
-
 type ExtractMetric struct {
 	ID       string            ``
 	IsResult bool              ``

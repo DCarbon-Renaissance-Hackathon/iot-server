@@ -1,4 +1,4 @@
-FROM harbor.viet-tin.com/dcarbon/iott-cloud:cache as builder
+FROM harbor.viet-tin.com/dcarbon/go-shared as builder
 
 WORKDIR /dcarbon/iott-cloud
 COPY . .
@@ -12,7 +12,7 @@ RUN swag init -g ./cmd/iott-cloud/main.go -o ./cmd/iott-cloud/docs  &&  \
     cp  iott-cloud /usr/bin
 
 
-FROM alpine:3.16
+FROM alpine:3.17
 
 COPY --from=builder /usr/bin/iott-cloud /usr/bin/iott-cloud
 ENV GIN_MODE=release

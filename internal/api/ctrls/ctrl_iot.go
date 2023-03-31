@@ -1,4 +1,4 @@
-package controllers
+package ctrls
 
 import (
 	"log"
@@ -13,17 +13,13 @@ import (
 )
 
 type IotCtrl struct {
-	repo domain.IIot
+	iotRepo domain.IIot
 }
 
-func NewIotCtrl(dbUrl string, chainID int64, cbVersion string, cbAddr string) (*IotCtrl, error) {
+func NewIotCtrl(typedDomain *esign.TypedDataDomain,
+) (*IotCtrl, error) {
 	var dMinter, err = esign.NewERC712(
-		&esign.TypedDataDomain{
-			Name:              "Carbon",
-			Version:           cbVersion,
-			ChainId:           chainID,
-			VerifyingContract: cbAddr,
-		},
+		typedDomain,
 		esign.MustNewTypedDataField(
 			"Mint",
 			esign.TypedDataStruct,
@@ -41,7 +37,7 @@ func NewIotCtrl(dbUrl string, chainID int64, cbVersion string, cbAddr string) (*
 		return nil, err
 	}
 	var ctrl = &IotCtrl{
-		repo: irepo,
+		iotRepo: irepo,
 	}
 	return ctrl, nil
 }
@@ -65,7 +61,7 @@ func (ctrl *IotCtrl) Create(r *gin.Context) {
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest(err.Error()))
 	} else {
-		err = ctrl.repo.Create(iot)
+		err = ctrl.iotRepo.Create(iot)
 		if nil != err {
 			r.JSON(500, err)
 		} else {
@@ -92,7 +88,7 @@ func (ctrl *IotCtrl) ChangeStatus(r *gin.Context) {
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest(err.Error()))
 	} else {
-		iot, err := ctrl.repo.ChangeStatus(payload.Address, payload.Status)
+		iot, err := ctrl.iotRepo.ChangeStatus(payload.Address, payload.Status)
 		if nil != err {
 			r.JSON(500, err)
 		} else {
@@ -145,13 +141,12 @@ func (ctrl *IotCtrl) GetByBB(r *gin.Context) {
 		Lng: maxLng,
 		Lat: maxLat,
 	}
-	data, err := ctrl.repo.GetByBB(min, max)
+	data, err := ctrl.iotRepo.GetByBB(min, max)
 	if nil != err {
 		r.JSON(500, err)
 	} else {
 		r.JSON(200, data)
 	}
-
 }
 
 // GetRawMetric godoc
@@ -178,7 +173,7 @@ func (ctrl *IotCtrl) CreateMetric(r *gin.Context) {
 		r.JSON(400, err)
 	} else {
 
-		err = ctrl.repo.CreateMetric(payload)
+		err = ctrl.iotRepo.CreateMetric(payload)
 		if nil != err {
 			r.JSON(500, err)
 		} else {
@@ -216,7 +211,7 @@ func (ctrl *IotCtrl) GetMetrics(r *gin.Context) {
 
 	var addr = r.Param("iotAddr")
 	log.Printf("Add:%s from:%d to:%d\n", addr, from, to)
-	data, err := ctrl.repo.GetMetrics(addr, from, to)
+	data, err := ctrl.iotRepo.GetMetrics(addr, from, to)
 	if nil != err {
 		r.JSON(500, err)
 	} else {
@@ -245,7 +240,7 @@ func (ctrl *IotCtrl) GetRawMetric(r *gin.Context) {
 		return
 	}
 
-	data, err := ctrl.repo.GetRawMetric(metricId)
+	data, err := ctrl.iotRepo.GetRawMetric(metricId)
 	if nil != err {
 		r.JSON(500, err)
 	} else {
@@ -274,7 +269,7 @@ func (ctrl *IotCtrl) CreateMint(r *gin.Context) {
 		return
 	}
 
-	err = ctrl.repo.CreateMint(mint)
+	err = ctrl.iotRepo.CreateMint(mint)
 	if nil != err {
 		r.JSON(500, err)
 	} else {
@@ -308,7 +303,7 @@ func (ctrl *IotCtrl) GetMintSigns(r *gin.Context) {
 		return
 	}
 
-	signeds, err := ctrl.repo.GetMintSigns(iotAddress, int(fromNonce))
+	signeds, err := ctrl.iotRepo.GetMintSigns(iotAddress, int(fromNonce))
 	if nil != err {
 		r.JSON(500, err)
 		return
@@ -343,13 +338,17 @@ func (ctrl *IotCtrl) GetTT(r *gin.Context) {
 		return
 	}
 
-	signeds, err := ctrl.repo.GetMintSigns(iotAddress, int(fromNonce))
+	signeds, err := ctrl.iotRepo.GetMintSigns(iotAddress, int(fromNonce))
 	if nil != err {
 		r.JSON(500, err)
 		return
 	} else {
 		r.JSON(200, signeds)
 	}
+}
+
+func (ctrl *IotCtrl) GetIOTRepo() domain.IIot {
+	return ctrl.iotRepo
 }
 
 type RIOTChangeStatus struct {

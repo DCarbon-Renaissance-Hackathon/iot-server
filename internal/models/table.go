@@ -6,11 +6,12 @@ const (
 	TableNameProjectDesc = "projects_desc"
 	TableNameProjectSpec = "projects_specs"
 
-	TableNameIOT           = "iots"
-	TableNameSensors       = "sensors"
-	TableNameSensorMetrics = "sensor_metrics"
-	TableNameMetrics       = "metrics"
-	TableNameMintSign      = "mint_sign"
+	TableNameIOT         = "iots"
+	TableNameSensors     = "sensors"
+	TableNameSM          = "sensor_metrics"
+	TableNameSMSignature = "sensor_metrics_signature"
+	TableNameMetrics     = "metrics"
+	TableNameMintSign    = "mint_sign"
 
 	TableNameUser = "users"
 )

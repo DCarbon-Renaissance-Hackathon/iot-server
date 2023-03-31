@@ -1,7 +1,8 @@
 package routers
 
 import (
-	"github.com/Dcarbon/iott-cloud/internal/api/controllers"
+	"github.com/Dcarbon/go-shared/libs/esign"
+	"github.com/Dcarbon/iott-cloud/internal/api/ctrls"
 	"github.com/Dcarbon/iott-cloud/internal/api/mids"
 	"github.com/Dcarbon/iott-cloud/internal/repo"
 	"github.com/gin-gonic/gin"
@@ -21,10 +22,11 @@ type Router struct {
 	*gin.Engine
 	config       Config
 	auth         *mids.A2M
-	iotCtrl      *controllers.IotCtrl
-	projectCtrl  *controllers.ProjectCtrl
-	userCtrl     *controllers.UserCtrl
-	proposalCtrl *controllers.ProposalCtrl
+	iotCtrl      *ctrls.IotCtrl
+	projectCtrl  *ctrls.ProjectCtrl
+	userCtrl     *ctrls.UserCtrl
+	proposalCtrl *ctrls.ProposalCtrl
+	sensorCtrl   *ctrls.SensorCtrl
 }
 
 func NewRouter(config Config) (*Router, error) {
@@ -33,39 +35,47 @@ func NewRouter(config Config) (*Router, error) {
 		return nil, err
 	}
 
-	iotCtrl, err := controllers.NewIotCtrl(
-		config.DBUrl,
-		config.ChainID,
-		config.CarbonVersion,
-		config.CarbonAddress,
+	iotCtrl, err := ctrls.NewIotCtrl(
+		&esign.TypedDataDomain{
+			ChainId:           config.ChainID,
+			Version:           config.CarbonVersion,
+			VerifyingContract: config.CarbonAddress,
+			Name:              "CARBON",
+		},
 	)
 	if nil != err {
 		return nil, err
 	}
 
-	projectCtrl, err := controllers.NewProjectCtrl(config.DBUrl)
+	projectCtrl, err := ctrls.NewProjectCtrl(config.DBUrl)
 	if nil != err {
 		return nil, err
 	}
 
-	proposalCtrl, err := controllers.NewProposalCtrl(config.DBUrl)
+	proposalCtrl, err := ctrls.NewProposalCtrl(config.DBUrl)
 	if nil != err {
 		return nil, err
 	}
 
-	userCtrl, err := controllers.NewUserCtrl(config.DBUrl, config.JwtKey, config.TokenDuration)
+	sensorCtrl, err := ctrls.NewSensorCtrl(iotCtrl.GetIOTRepo())
+	if nil != err {
+		return nil, err
+	}
+
+	userCtrl, err := ctrls.NewUserCtrl(config.DBUrl, config.JwtKey, config.TokenDuration)
 	if nil != err {
 		return nil, err
 	}
 
 	var r = &Router{
 		Engine:       gin.Default(),
+		auth:         &mids.A2M{},
 		config:       config,
 		iotCtrl:      iotCtrl,
 		projectCtrl:  projectCtrl,
 		proposalCtrl: proposalCtrl,
 		userCtrl:     userCtrl,
-		auth:         &mids.A2M{},
+		sensorCtrl:   sensorCtrl,
 	}
 
 	r.Use(mids.GetCORS())
@@ -95,6 +105,23 @@ func NewRouter(config Config) (*Router, error) {
 
 		iotRoute.POST("/:iotAddr/mint-sign/", iotCtrl.CreateMint)
 		iotRoute.GET("/:iotAddr/mint-sign/", iotCtrl.GetMintSigns)
+	}
+
+	var sensorRoute = v1.Group("/sensors")
+	{
+		sensorRoute.POST("/",
+			mids.NewA2(config.JwtKey, "sensor-create").HandlerFunc,
+			sensorCtrl.Create,
+		)
+
+		sensorRoute.PUT("/change-status",
+			mids.NewA2(config.JwtKey, "sensor-change-status").HandlerFunc,
+			sensorCtrl.ChangeStatus,
+		)
+
+		sensorRoute.GET("/:id", sensorCtrl.GetSensor)
+		sensorRoute.GET("/", sensorCtrl.GetSensors)
+
 	}
 
 	var projectRoute = v1.Group("/projects")

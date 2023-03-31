@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-//
 const (
 	// Common error
 	ECodeBadRequest        = 40000
@@ -18,6 +17,7 @@ const (
 	ECodeExisted           = 40005
 	ECodeQueryParamInvalid = 40006
 	ECodeInvalidSignature  = 40007
+	ECodeAddressIsEmpty    = 40008
 
 	// Project error
 
@@ -25,9 +25,16 @@ const (
 	ECodeIOTNotAllowed      = 41000
 	ECodeIOTInvalidNonce    = 41001
 	ECodeIOTInvalidMintSign = 41002
+
+	// Sensor error
+	ECodeSensorNotAllowed      = 41100
+	ECodeSensorInvalidNonce    = 41101
+	ECodeSensorInvalidMintSign = 41102
+	ECodeSensorInvalidMetric   = 41103
+	ECodeSensorHasNoAddress    = 41104
+	ECodeSensorHasAddress      = 41105
 )
 
-//
 const (
 	ECodeInternal     = 50000
 	ECodeNotImplement = 50001
@@ -80,7 +87,7 @@ func ParsePostgresError(label string, err error) error {
 	return ErrInternal(err)
 }
 
-//ErrInternal :
+// ErrInternal :
 func ErrInternal(err error) error {
 	if nil == err {
 		return nil
@@ -89,18 +96,18 @@ func ErrInternal(err error) error {
 	return NewError(ECodeInternal, "internal error")
 }
 
-//ErrInternal :
+// ErrInternal :
 func ErrNotImplement() error {
 	return NewError(ECodeNotImplement, "not implement")
 }
 
-//ErrInternal :
+// ErrInternal :
 func ErrBadRequest(msg string) error {
 	// log.Println("Bad request error: ", err)
 	return NewError(ECodeBadRequest, msg)
 }
 
-//ErrInternal :
+// ErrInternal :
 func ErrQueryParam(msg string) error {
 	return NewError(ECodeQueryParamInvalid, msg)
 }
