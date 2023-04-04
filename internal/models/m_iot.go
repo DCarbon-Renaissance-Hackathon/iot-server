@@ -22,7 +22,7 @@ const (
 type IOTDevice struct {
 	ID       int64      `json:"id" gorm:"primary_key"`
 	Project  int64      `json:"project" `
-	Address  EthAddress `json:"address" `
+	Address  EthAddress `json:"address" gorm:"unique"`
 	Type     IOTType    `json:"type" `
 	Status   IOTStatus  `json:"status"`
 	Position Point4326  `json:"position" gorm:"type:geometry(POINT, 4326)"`

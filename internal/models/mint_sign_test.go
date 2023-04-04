@@ -14,10 +14,10 @@ const PrvStr = "5763b65df1b1860bfa8a372ae589f1a67811c3e4a7234d29fc3d68d2c531e547
 
 var testDomainMinter = esign.MustNewERC712(
 	&esign.TypedDataDomain{
-		Name:              "Carbon",
+		Name:              "CARBON",
 		Version:           "1",
 		ChainId:           1,
-		VerifyingContract: "0xA1E064Fd61B76cf11CE3b5816344f861b6318cea",
+		VerifyingContract: "0x9C399C33a393334D28e8bA4FFF45296f50F82d1f",
 	},
 	esign.MustNewTypedDataField(
 		"Mint",

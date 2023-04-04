@@ -146,19 +146,19 @@ func (ctrl *SensorCtrl) GetSensors(r *gin.Context) {
 // @Tags         Sensors
 // @Accept       json
 // @Produce      json
-// @Param        payload			body		domain.RCreateSensor		true	"Signature of metric was signed by sensor"
+// @Param        payload			body		domain.RCreateSM		true	"Signature of metric was signed by sensor"
 // @Success      200				{object}	models.Sensor
 // @Failure      400				{object}	models.Error
 // @Failure      404				{object}	models.Error
 // @Failure      500				{object}	models.Error
 // @Router       /sensors/sm/create	[post]
 func (ctrl *SensorCtrl) CreateSm(r *gin.Context) {
-	var payload = &domain.RCreateSensor{}
+	var payload = &domain.RCreateSM{}
 	var err = r.Bind(payload)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest(err.Error()))
 	} else {
-		sensor, err := ctrl.sensorRepo.CreateSensor(payload)
+		sensor, err := ctrl.sensorRepo.CreateSM(payload)
 		if nil != err {
 			r.JSON(500, err)
 		} else {
@@ -184,13 +184,26 @@ func (ctrl *SensorCtrl) CreateSMByIOT(r *gin.Context) {
 	var err = r.Bind(payload)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest(err.Error()))
+		return
+	}
+
+	if payload.IotAddress.IsEmpty() {
+		r.JSON(400, models.ErrBadRequest("Missing iot address"))
+		return
+	}
+
+	iot, err := ctrl.iotRepo.GetIOTByAddress(payload.IotAddress)
+	if nil != err {
+		r.JSON(500, err)
+		return
+	}
+
+	payload.IotID = iot.ID
+	sensor, err := ctrl.sensorRepo.CreateSMFromIot(payload)
+	if nil != err {
+		r.JSON(500, err)
 	} else {
-		sensor, err := ctrl.sensorRepo.CreateSMFromIot(payload)
-		if nil != err {
-			r.JSON(500, err)
-		} else {
-			r.JSON(http.StatusCreated, sensor)
-		}
+		r.JSON(http.StatusCreated, sensor)
 	}
 }
 

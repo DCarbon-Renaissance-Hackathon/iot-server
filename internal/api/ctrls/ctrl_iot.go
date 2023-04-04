@@ -13,7 +13,8 @@ import (
 )
 
 type IotCtrl struct {
-	iotRepo domain.IIot
+	iotRepo   domain.IIot
+	separator *esign.TypedDataDomain // Domain seperator
 }
 
 func NewIotCtrl(typedDomain *esign.TypedDataDomain,
@@ -37,7 +38,8 @@ func NewIotCtrl(typedDomain *esign.TypedDataDomain,
 		return nil, err
 	}
 	var ctrl = &IotCtrl{
-		iotRepo: irepo,
+		iotRepo:   irepo,
+		separator: typedDomain,
 	}
 	return ctrl, nil
 }
@@ -65,7 +67,7 @@ func (ctrl *IotCtrl) Create(r *gin.Context) {
 		if nil != err {
 			r.JSON(500, err)
 		} else {
-			r.JSON(http.StatusCreated, iot)
+			r.JSON(200, iot)
 		}
 	}
 }
@@ -345,6 +347,21 @@ func (ctrl *IotCtrl) GetTT(r *gin.Context) {
 	} else {
 		r.JSON(200, signeds)
 	}
+}
+
+// GetRawMetric		godoc
+// @Summary			GetDomainSeperator
+// @Description		Get domain separator
+// @Tags			Iots
+// @Accept			json
+// @Produce			json
+// @Success			200				{integer}	esign.TypedDataDomain
+// @Failure			400				{object}	models.Error
+// @Failure			404				{object}	models.Error
+// @Failure			500				{object}	models.Error
+// @Router			/iots/seperator [get]
+func (ctrl *IotCtrl) GetDomainSeperator(r *gin.Context) {
+	r.JSON(200, ctrl.separator)
 }
 
 func (ctrl *IotCtrl) GetIOTRepo() domain.IIot {

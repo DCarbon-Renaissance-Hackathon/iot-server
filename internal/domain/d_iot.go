@@ -7,6 +7,8 @@ type IIot interface {
 	ChangeStatus(iotAddr string, status models.IOTStatus) (*models.IOTDevice, error)
 	GetByBB(min, max *models.Point4326) ([]*models.IOTDevice, error) // boundingbox
 	GetIOT(id int64) (*models.IOTDevice, error)
+	GetIOTByAddress(addr models.EthAddress) (*models.IOTDevice, error)
+
 	// GetIOTStatus(iotAddr string) models.IOTStatus
 
 	CreateMetric(*models.Metric) error

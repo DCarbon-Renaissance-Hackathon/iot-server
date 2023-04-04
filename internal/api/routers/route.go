@@ -105,6 +105,8 @@ func NewRouter(config Config) (*Router, error) {
 
 		iotRoute.POST("/:iotAddr/mint-sign/", iotCtrl.CreateMint)
 		iotRoute.GET("/:iotAddr/mint-sign/", iotCtrl.GetMintSigns)
+
+		iotRoute.GET("/seperator", iotCtrl.GetDomainSeperator)
 	}
 
 	var sensorRoute = v1.Group("/sensors")
@@ -122,6 +124,8 @@ func NewRouter(config Config) (*Router, error) {
 		sensorRoute.GET("/:id", sensorCtrl.GetSensor)
 		sensorRoute.GET("/", sensorCtrl.GetSensors)
 
+		sensorRoute.POST("/sm/create", sensorCtrl.Create)
+		sensorRoute.POST("/sm/create-by-iot", sensorCtrl.CreateSMByIOT)
 	}
 
 	var projectRoute = v1.Group("/projects")

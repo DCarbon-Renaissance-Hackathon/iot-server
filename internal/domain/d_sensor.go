@@ -1,16 +1,14 @@
 package domain
 
 import (
-	"time"
-
 	"github.com/Dcarbon/iott-cloud/internal/models"
 )
 
 type RCreateSensor struct {
-	IotID     int64             `json:"iotId"`
-	Type      models.SensorType `json:"type"`      // CH4, KW, MW, ...
-	Address   models.EthAddress `json:"address"`   // Sensor address
-	CreatedAt time.Time         `json:"createdAt"` //
+	IotID   int64             `json:"iotId"`
+	Type    models.SensorType `json:"type"`    // CH4, KW, MW, ...
+	Address models.EthAddress `json:"address"` // Sensor address
+	// CreatedAt time.Time         `json:"createdAt"` //
 }
 
 type RChangeSensorStatus struct {
@@ -39,8 +37,8 @@ type RCreateSMFromIOT struct {
 	Data       string            `json:"data"`     // Hex json of SMExtract
 	Signed     string            `json:"signed"`   // Hex of rsv (65bytes)
 	SensorID   int64             `json:"sensorId"` //
-	IotID      int64             `json:"iotId"`    //
 	IotAddress models.EthAddress `json:"iot"`      //
+	IotID      int64             `json:"iotId"`    //
 }
 
 type RGetSM struct {

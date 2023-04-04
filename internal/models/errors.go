@@ -8,31 +8,33 @@ import (
 	"gorm.io/gorm"
 )
 
+type ECode int
+
 const (
 	// Common error
-	ECodeBadRequest        = 40000
-	ECodeUnauthorized      = 40001
-	ECodePermissionDenied  = 40003
-	ECodeNotExisted        = 40004
-	ECodeExisted           = 40005
-	ECodeQueryParamInvalid = 40006
-	ECodeInvalidSignature  = 40007
-	ECodeAddressIsEmpty    = 40008
+	ECodeBadRequest        ECode = 40000
+	ECodeUnauthorized      ECode = 40001
+	ECodePermissionDenied  ECode = 40003
+	ECodeNotExisted        ECode = 40004
+	ECodeExisted           ECode = 40005
+	ECodeQueryParamInvalid ECode = 40006
+	ECodeInvalidSignature  ECode = 40007
+	ECodeAddressIsEmpty    ECode = 40008
 
 	// Project error
 
 	// IOT error
-	ECodeIOTNotAllowed      = 41000
-	ECodeIOTInvalidNonce    = 41001
-	ECodeIOTInvalidMintSign = 41002
+	ECodeIOTNotAllowed      ECode = 41000
+	ECodeIOTInvalidNonce    ECode = 41001
+	ECodeIOTInvalidMintSign ECode = 41002
 
 	// Sensor error
-	ECodeSensorNotAllowed      = 41100
-	ECodeSensorInvalidNonce    = 41101
-	ECodeSensorInvalidMintSign = 41102
-	ECodeSensorInvalidMetric   = 41103
-	ECodeSensorHasNoAddress    = 41104
-	ECodeSensorHasAddress      = 41105
+	ECodeSensorNotAllowed      ECode = 41100
+	ECodeSensorInvalidNonce    ECode = 41101
+	ECodeSensorInvalidMintSign ECode = 41102
+	ECodeSensorInvalidMetric   ECode = 41103
+	ECodeSensorHasNoAddress    ECode = 41104
+	ECodeSensorHasAddress      ECode = 41105
 )
 
 const (
@@ -46,11 +48,11 @@ var (
 )
 
 type Error struct {
-	Code    int    `json:"code"`
+	Code    ECode  `json:"code"`
 	Message string `json:"message"`
 }
 
-func NewError(code int, msg string) error {
+func NewError(code ECode, msg string) error {
 	var err = &Error{
 		Code:    code,
 		Message: msg,

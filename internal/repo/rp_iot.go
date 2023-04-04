@@ -33,7 +33,8 @@ func NewIOTRepo(dMinter *esign.ERC712,
 	}
 
 	var ip = &iotRepo{
-		db: db,
+		db:      db,
+		dMinter: dMinter,
 	}
 	return ip, nil
 }
@@ -64,6 +65,16 @@ func (ip *iotRepo) ChangeStatus(iotAddr string, status models.IOTStatus,
 func (ip *iotRepo) GetIOT(id int64) (*models.IOTDevice, error) {
 	var iot = &models.IOTDevice{}
 	var err = ip.tblIOT().Where("id = ?", id).First(iot).Error
+	if nil != err {
+		return iot, models.ParsePostgresError("IOT", err)
+	}
+
+	return iot, nil
+}
+
+func (ip *iotRepo) GetIOTByAddress(addr models.EthAddress) (*models.IOTDevice, error) {
+	var iot = &models.IOTDevice{}
+	var err = ip.tblIOT().Where("address = ?", addr).First(iot).Error
 	if nil != err {
 		return iot, models.ParsePostgresError("IOT", err)
 	}

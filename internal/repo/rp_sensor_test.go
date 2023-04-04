@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"log"
 	"testing"
 	"time"
 
@@ -53,10 +54,10 @@ func TestSensorCreate(t *testing.T) {
 
 	for _, it := range addrs {
 		_, err := sensorImpl.CreateSensor(&domain.RCreateSensor{
-			IotID:     iotTestSensors[0].ID,
-			Type:      models.SensorTypePower,
-			Address:   it,
-			CreatedAt: time.Now(),
+			IotID:   iotTestSensors[0].ID,
+			Type:    models.SensorTypePower,
+			Address: it,
+			// CreatedAt: time.Now(),
 		})
 		utils.PanicError("", err)
 	}
@@ -65,9 +66,9 @@ func TestSensorCreate(t *testing.T) {
 func TestSensorCreate2(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		_, err := sensorImpl.CreateSensor(&domain.RCreateSensor{
-			IotID:     iotTestSensors[1].ID,
-			Type:      models.SensorTypePower,
-			CreatedAt: time.Now(),
+			IotID: iotTestSensors[1].ID,
+			Type:  models.SensorTypePower,
+			// CreatedAt: time.Now(),
 		})
 		utils.PanicError("", err)
 	}
@@ -111,6 +112,7 @@ func TestSensorCreateSM(t *testing.T) {
 	}
 	var signed, err = smx.Signed(pKey)
 	utils.PanicError("", err)
+	log.Println()
 
 	data, err := sensorImpl.CreateSM(&domain.RCreateSM{
 		SensorAddress: sensorAddr,
@@ -153,4 +155,42 @@ func TestSensorGetSM(t *testing.T) {
 	})
 	utils.PanicError("", err)
 	utils.Dump("", data)
+}
+
+func TestGenerateSignMetric(t *testing.T) {
+	var iotAddr = models.EthAddress("0xE445517AbB524002Bb04C96F96aBb87b8B19b53d")
+	var pKey = "0x0123456789012345678901234567890123456789012345678901234567880000"
+	var smx = &models.SMExtract{
+		From:      1578104103,
+		To:        1578104104,
+		Indicator: 10.1,
+		Address:   iotAddr,
+	}
+	var signed, err = smx.Signed(pKey)
+	utils.PanicError("", err)
+	utils.Dump("signed: ", signed)
+	utils.Dump("", smx)
+}
+
+func TestGenerateSignMetric2(t *testing.T) {
+	// var iotID = 2
+	var iotAddr = models.EthAddress("0x19Adf96848504a06383b47aAA9BbBC6638E81afD")
+	var pKey = "0x0123456789012345678901234567890123456789012345678901234567880001"
+	var smx = &models.SMExtract{
+		From:      1578104103,
+		To:        1578104104,
+		Indicator: 10.1,
+		Address:   iotAddr,
+	}
+	var signed, err = smx.Signed(pKey)
+	utils.PanicError("", err)
+
+	var req = &domain.RCreateSMFromIOT{
+		Data:       signed.Data,
+		Signed:     signed.Signed,
+		IotAddress: iotAddr,
+		SensorID:   31,
+	}
+
+	utils.Dump("Request", req)
 }
