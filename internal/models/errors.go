@@ -33,8 +33,9 @@ const (
 	ECodeSensorInvalidNonce    ECode = 41101
 	ECodeSensorInvalidMintSign ECode = 41102
 	ECodeSensorInvalidMetric   ECode = 41103
-	ECodeSensorHasNoAddress    ECode = 41104
-	ECodeSensorHasAddress      ECode = 41105
+	ECodeSensorInvalidType     ECode = 41104
+	ECodeSensorHasNoAddress    ECode = 41105
+	ECodeSensorHasAddress      ECode = 41106
 )
 
 const (

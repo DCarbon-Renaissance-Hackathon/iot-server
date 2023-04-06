@@ -89,7 +89,7 @@ func (ctrl *SensorCtrl) ChangeStatus(r *gin.Context) {
 // @Tags         Sensors
 // @Accept       json
 // @Produce      json
-// @Param        id   				path		int				true	"Sensor id"
+// @Param        id					path		int					true	"Sensor id"
 // @Success      200				{object}	models.Sensor
 // @Failure      400				{object}	models.Error
 // @Failure      404				{object}	models.Error
@@ -100,7 +100,7 @@ func (ctrl *SensorCtrl) GetSensor(r *gin.Context) {
 	if err != nil || id <= 0 {
 		r.JSON(400, models.ErrBadRequest("Invalid sensor id "))
 	} else {
-		sensor, err := ctrl.sensorRepo.GetSensor(&domain.RGetSensor{ID: id})
+		sensor, err := ctrl.sensorRepo.GetSensor(&domain.SensorID{ID: id})
 		if nil != err {
 			r.JSON(500, err)
 		} else {
@@ -111,12 +111,14 @@ func (ctrl *SensorCtrl) GetSensor(r *gin.Context) {
 
 // Create godoc
 // @Summary      GetSensors
-// @Description  Get list of sensors
+// @Description  Get list of sensors. Only use one of iot_id or iot_address
 // @Tags         Sensors
 // @Accept       json
 // @Produce      json
-// @Param        skip				query		int			true	"Skip"
-// @Param        limit				query		int			true	"Limit"
+// @Param        skip				query		int					false	"Skip"
+// @Param        limit				query		int					false	"Limit"
+// @Param        iot_id				query		int					false	"IOT id, only use iot_id or iot_address"
+// @Param        iot_address		query		string				false	"IOT address, only use iot_id or iot_address"
 // @Success      200				{object}	models.Sensor
 // @Failure      400				{object}	models.Error
 // @Failure      404				{object}	models.Error
@@ -129,9 +131,22 @@ func (ctrl *SensorCtrl) GetSensors(r *gin.Context) {
 		limit = 20
 	}
 
+	var iotId, _ = strconv.ParseInt(r.Query("iot_id"), 10, 64)
+	var iotAddr = models.EthAddress(r.Query("iot_address"))
+
+	if iotId <= 0 && !iotAddr.IsEmpty() {
+		iot, err := ctrl.iotRepo.GetIOTByAddress(iotAddr)
+		if nil != err {
+			r.JSON(500, err)
+			return
+		}
+		iotId = iot.ID
+	}
+
 	sensor, err := ctrl.sensorRepo.GetSensors(&domain.RGetSensors{
 		Skip:  int(skip),
 		Limit: int(limit),
+		IotId: iotId,
 	})
 	if nil != err {
 		r.JSON(500, err)

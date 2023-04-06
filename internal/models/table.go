@@ -8,8 +8,9 @@ const (
 
 	TableNameIOT         = "iots"
 	TableNameSensors     = "sensors"
-	TableNameSM          = "sensor_metrics"
-	TableNameSMSignature = "sensor_metrics_signature"
+	TableNameSmFloat     = "sensor_metric_numer"
+	TableNameSmGPS       = "sensor_metric_gps"
+	TableNameSmSignature = "sensor_metrics_signature"
 	TableNameMetrics     = "metrics"
 	TableNameMintSign    = "mint_sign"
 

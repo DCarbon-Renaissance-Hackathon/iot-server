@@ -10,6 +10,7 @@ const (
 	SensorTypeNone  SensorType = 0
 	SensorTypeFlow  SensorType = 1
 	SensorTypePower SensorType = 2
+	SensorTypeGPS   SensorType = 3
 )
 
 type SensorStatus int32

@@ -4,11 +4,16 @@ import (
 	"github.com/Dcarbon/iott-cloud/internal/models"
 )
 
+// Identify of sensor. Required id or address
+type SensorID struct {
+	ID      int64             `json:"id"`
+	Address models.EthAddress `json:"address"`
+}
+
 type RCreateSensor struct {
 	IotID   int64             `json:"iotId"`
 	Type    models.SensorType `json:"type"`    // CH4, KW, MW, ...
 	Address models.EthAddress `json:"address"` // Sensor address
-	// CreatedAt time.Time         `json:"createdAt"` //
 }
 
 type RChangeSensorStatus struct {
@@ -16,15 +21,15 @@ type RChangeSensorStatus struct {
 	Status models.SensorStatus `json:"status"`
 }
 
-type RGetSensor struct {
-	ID      int64             `json:"id"`
-	Address models.EthAddress `json:"address"`
-}
+// type RGetSensor struct {
+// 	ID      int64             `json:"id"`
+// 	Address models.EthAddress `json:"address"`
+// }
 
 type RGetSensors struct {
-	Skip  int   `json:"skip"`
-	Limit int   `json:"limit"`
-	IotId int64 `json:"iotId"`
+	Skip  int   `json:"skip"`  //
+	Limit int   `json:"limit"` //
+	IotId int64 `json:"iotId"` //
 }
 
 type RCreateSM struct {
@@ -50,11 +55,11 @@ type RGetSM struct {
 type ISensor interface {
 	CreateSensor(*RCreateSensor) (*models.Sensor, error)
 	ChangeSensorStatus(*RChangeSensorStatus) (*models.Sensor, error)
-	GetSensor(*RGetSensor) (*models.Sensor, error)
+	GetSensor(*SensorID) (*models.Sensor, error)
 	GetSensors(*RGetSensors) ([]*models.Sensor, error)
 
-	CreateSM(*RCreateSM) (*models.SM, error)
-	CreateSMFromIot(*RCreateSMFromIOT) (*models.SM, error)
+	CreateSM(*RCreateSM) (*models.SmSignature, error)
+	CreateSMFromIot(*RCreateSMFromIOT) (*models.SmSignature, error)
 
-	GetMetrics(*RGetSM) ([]*models.SM, error)
+	GetMetrics(*RGetSM) ([]*models.SmFloat, error)
 }

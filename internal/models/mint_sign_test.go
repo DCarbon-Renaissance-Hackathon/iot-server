@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"log"
 	"testing"
 
@@ -46,4 +47,18 @@ func TestMintSignAndVerify(t *testing.T) {
 
 	err = m.Verify(testDomainMinter)
 	utils.PanicError("TestMintVerify", err)
+}
+
+func TestFloat(t *testing.T) {
+	var d = &DefaultMetric{
+		Value: 100.1,
+	}
+
+	raw, err := json.Marshal(d)
+	utils.PanicError("", err)
+
+	var d2 = &DefaultMetric{}
+	err = json.Unmarshal(raw, d2)
+	utils.PanicError("", err)
+
 }

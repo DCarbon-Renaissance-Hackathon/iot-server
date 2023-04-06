@@ -2,7 +2,6 @@ package repo
 
 import (
 	"encoding/json"
-	"log"
 	"strings"
 	"time"
 
@@ -74,7 +73,7 @@ func (ip *iotRepo) GetIOT(id int64) (*models.IOTDevice, error) {
 
 func (ip *iotRepo) GetIOTByAddress(addr models.EthAddress) (*models.IOTDevice, error) {
 	var iot = &models.IOTDevice{}
-	var err = ip.tblIOT().Where("address = ?", addr).First(iot).Error
+	var err = ip.tblIOT().Where("address = ?", &addr).First(iot).Error
 	if nil != err {
 		return iot, models.ParsePostgresError("IOT", err)
 	}
@@ -95,7 +94,7 @@ func (ip *iotRepo) GetByBB(min, max *models.Point4326,
 }
 
 func (ip *iotRepo) CreateMetric(m *models.Metric) error {
-	log.Println("Create metric for ", m.Address)
+	// log.Println("Create metric for ", m.Address)
 	m.ID = uuid.NewV4().String()
 	m.CreatedAt = time.Now()
 	m.Address = strings.ToLower(m.Address)
