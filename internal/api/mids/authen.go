@@ -63,7 +63,7 @@ func (a2 *A2M) HandlerFunc(r *gin.Context) {
 
 	err = hasPerm(user.Role, a2.perm)
 	if nil != err {
-		r.AbortWithError(http.StatusUnauthorized, models.ErrorUnauthorized)
+		r.AbortWithError(http.StatusForbidden, models.ErrorPermissionDenied)
 		return
 	}
 

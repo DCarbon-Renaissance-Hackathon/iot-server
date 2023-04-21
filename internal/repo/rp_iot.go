@@ -1,15 +1,12 @@
 package repo
 
 import (
-	"encoding/json"
 	"strings"
 	"time"
 
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -24,8 +21,8 @@ func NewIOTRepo(dMinter *esign.ERC712,
 	var db = getSingletonDB()
 	err := db.AutoMigrate(
 		&models.IOTDevice{},
-		&models.Metric{},
 		&models.MintSign{},
+		// &models.Metric{},
 	)
 	if nil != err {
 		return nil, err
@@ -91,55 +88,6 @@ func (ip *iotRepo) GetByBB(min, max *models.Point4326,
 		).
 		Find(&iots).Error
 	return iots, models.ParsePostgresError("IOT", err)
-}
-
-func (ip *iotRepo) CreateMetric(m *models.Metric) error {
-	// log.Println("Create metric for ", m.Address)
-	m.ID = uuid.NewV4().String()
-	m.CreatedAt = time.Now()
-	m.Address = strings.ToLower(m.Address)
-	var status = ip.GetIOTStatus(m.Address)
-	if status < 0 {
-		return models.NewError(models.ECodeIOTNotAllowed, "Iot status is not valid")
-	}
-
-	raw, err := hexutil.Decode(m.Data)
-	if nil != err {
-		return models.ErrBadRequest("Data must be hex")
-	}
-
-	err = json.Unmarshal(raw, &m.Extract)
-	if nil != err {
-		return models.ErrBadRequest("Invalid metric data: " + err.Error())
-	}
-
-	return models.ParsePostgresError("Metrics", ip.tblMetrics().Create(m).Error)
-}
-
-func (ip *iotRepo) GetMetrics(iot string, from, to int64,
-) ([]*models.Metric, error) {
-	iot = strings.ToLower(iot)
-
-	var ftime = time.Unix(from, 0)
-	var fto = time.Unix(to, 0)
-	var metrics = make([]*models.Metric, 0)
-	var err = ip.tblMetrics().
-		Select("id, is_result, warning, metrics, created_at").
-		Where(
-			"address = ? AND created_at >= ? AND created_at <= ?",
-			iot, ftime, fto).
-		Find(&metrics).
-		Error
-	return metrics, models.ParsePostgresError("Metrics", err)
-}
-
-func (ip *iotRepo) GetRawMetric(metricId string,
-) (*models.Metric, error) {
-	var metric = &models.Metric{}
-	var err = ip.tblMetrics().
-		Where("id = ?", metricId).
-		First(metric).Error
-	return metric, models.ParsePostgresError("Metrics", err)
 }
 
 func (ip *iotRepo) GetIOTStatus(iotAddr string) models.IOTStatus {
@@ -228,10 +176,55 @@ func (ip *iotRepo) tblIOT() *gorm.DB {
 	return ip.db.Table(models.TableNameIOT)
 }
 
-func (ip *iotRepo) tblMetrics() *gorm.DB {
-	return ip.db.Table(models.TableNameMetrics)
-}
-
 func (ip *iotRepo) tblSign() *gorm.DB {
 	return ip.db.Table(models.TableNameMintSign)
 }
+
+// func (ip *iotRepo) CreateMetric(m *models.Metric) error {
+// 	// log.Println("Create metric for ", m.Address)
+// 	m.ID = uuid.NewV4().String()
+// 	m.CreatedAt = time.Now()
+// 	m.Address = strings.ToLower(m.Address)
+// 	var status = ip.GetIOTStatus(m.Address)
+// 	if status < 0 {
+// 		return models.NewError(models.ECodeIOTNotAllowed, "Iot status is not valid")
+// 	}
+// 	raw, err := hexutil.Decode(m.Data)
+// 	if nil != err {
+// 		return models.ErrBadRequest("Data must be hex")
+// 	}
+// 	err = json.Unmarshal(raw, &m.Extract)
+// 	if nil != err {
+// 		return models.ErrBadRequest("Invalid metric data: " + err.Error())
+// 	}
+// 	return models.ParsePostgresError("Metrics", ip.tblMetrics().Create(m).Error)
+// }
+
+// func (ip *iotRepo) GetMetrics(iot string, from, to int64,
+// ) ([]*models.Metric, error) {
+// 	iot = strings.ToLower(iot)
+// 	var ftime = time.Unix(from, 0)
+// 	var fto = time.Unix(to, 0)
+// 	var metrics = make([]*models.Metric, 0)
+// 	var err = ip.tblMetrics().
+// 		Select("id, is_result, warning, metrics, created_at").
+// 		Where(
+// 			"address = ? AND created_at >= ? AND created_at <= ?",
+// 			iot, ftime, fto).
+// 		Find(&metrics).
+// 		Error
+// 	return metrics, models.ParsePostgresError("Metrics", err)
+// }
+
+// func (ip *iotRepo) GetRawMetric(metricId string,
+// ) (*models.Metric, error) {
+// 	var metric = &models.Metric{}
+// 	var err = ip.tblMetrics().
+// 		Where("id = ?", metricId).
+// 		First(metric).Error
+// 	return metric, models.ParsePostgresError("Metrics", err)
+// }
+
+// func (ip *iotRepo) tblMetrics() *gorm.DB {
+// 	return ip.db.Table(models.TableNameMetrics)
+// }

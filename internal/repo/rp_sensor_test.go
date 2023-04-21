@@ -106,7 +106,7 @@ func TestSensorCreateSM(t *testing.T) {
 		To:   1578104102,
 		Indicator: models.AllMetric{
 			DefaultMetric: models.DefaultMetric{
-				Value: 10.1,
+				Val: 10.1,
 			},
 			GPSMetric: models.GPSMetric{
 				Lng: 105.1,
@@ -136,7 +136,7 @@ func TestSensorCreateSMFromIOT(t *testing.T) {
 		To:   1578104102,
 		Indicator: models.AllMetric{
 			DefaultMetric: models.DefaultMetric{
-				Value: 10.1,
+				Val: 10.1,
 			},
 		},
 		Address: iotAddr,
@@ -173,7 +173,7 @@ func TestGenerateSignMetric(t *testing.T) {
 		To:   1578104104,
 		Indicator: models.AllMetric{
 			DefaultMetric: models.DefaultMetric{
-				Value: 10.1,
+				Val: 10.1,
 			},
 		},
 		Address: iotAddr,
@@ -204,4 +204,8 @@ func TestGenerateSignMetric2(t *testing.T) {
 		SensorID:   31,
 	}
 	utils.Dump("Request", req)
+}
+
+func TestXxx(t *testing.T) {
+	utils.Dump("", &models.AllMetric{})
 }

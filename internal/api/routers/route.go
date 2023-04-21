@@ -99,9 +99,9 @@ func NewRouter(config Config) (*Router, error) {
 		)
 		iotRoute.GET("/by-bb", iotCtrl.GetByBB)
 
-		iotRoute.POST("/:iotAddr/metrics", iotCtrl.CreateMetric)
-		iotRoute.GET("/:iotAddr/metrics", iotCtrl.GetMetrics)
-		iotRoute.GET("/:iotAddr/metrics/:metricId", iotCtrl.GetRawMetric)
+		// iotRoute.POST("/:iotAddr/metrics", iotCtrl.CreateMetric)
+		// iotRoute.GET("/:iotAddr/metrics", iotCtrl.GetMetrics)
+		// iotRoute.GET("/:iotAddr/metrics/:metricId", iotCtrl.GetRawMetric)
 
 		iotRoute.POST("/:iotAddr/mint-sign/", iotCtrl.CreateMint)
 		iotRoute.GET("/:iotAddr/mint-sign/", iotCtrl.GetMintSigns)

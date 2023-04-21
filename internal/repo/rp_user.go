@@ -48,7 +48,7 @@ func (up *userRepo) Login(addr models.EthAddress, signedHex, org string,
 		Address: addr,
 	}
 	err = up.tblUser().
-		Where("e_address = ?", addr).
+		Where("address = ?", addr).
 		First(user).Error
 	if nil != err {
 		if err == gorm.ErrRecordNotFound {
@@ -88,7 +88,7 @@ func (up *userRepo) GetUserById(id int64) (*models.User, error) {
 func (up *userRepo) GetUserByAddress(addr string) (*models.User, error) {
 	var user = &models.User{}
 	var err = up.tblUser().
-		Where("e_address = ?", addr).
+		Where("address = ?", addr).
 		First(user).Error
 
 	return user, models.ParsePostgresError("User", err)

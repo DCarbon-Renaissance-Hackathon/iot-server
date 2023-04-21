@@ -47,8 +47,8 @@ type RCreateSMFromIOT struct {
 }
 
 type RGetSM struct {
-	From  int64 `json:"from"`
-	To    int64 `json:"to"`
+	From  int64 `json:"from"` // Timestamp start
+	To    int64 `json:"to"`   // Timestamp end
 	IotId int64 `json:"iotId"`
 }
 

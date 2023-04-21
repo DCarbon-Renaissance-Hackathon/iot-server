@@ -1,18 +1,14 @@
 package repo
 
 import (
-	"encoding/json"
 	"log"
 	"testing"
-	"time"
 
-	"github.com/Dcarbon/go-shared/libs/dbutils"
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/go-shared/libs/utils"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 var iotRepoTest domain.IIot
@@ -83,60 +79,60 @@ func TestIOTGetByBB(t *testing.T) {
 	utils.Dump("TestIOTGetByBB", data)
 }
 
-func TestIOTCreateMetrics(t *testing.T) {
-	var from = time.Now().Unix() - 100
-	var to = from + 100
+// func TestIOTCreateMetrics(t *testing.T) {
+// 	var from = time.Now().Unix() - 100
+// 	var to = from + 100
 
-	var extract = &models.ExtractMetric{
-		From: from,
-		To:   to,
-		Position: models.Point4326{
-			Lat: 21.015462,
-			Lng: 105.804904,
-		},
-		Metrics: dbutils.MapSFloat{
-			"CH4": 100,
-			"N2O": 100,
-		},
-	}
-	rawExtract, err := json.Marshal(extract)
-	utils.PanicError("Marshal extract ", err)
+// 	var extract = &models.ExtractMetric{
+// 		From: from,
+// 		To:   to,
+// 		Position: models.Point4326{
+// 			Lat: 21.015462,
+// 			Lng: 105.804904,
+// 		},
+// 		Metrics: dbutils.MapSFloat{
+// 			"CH4": 100,
+// 			"N2O": 100,
+// 		},
+// 	}
+// 	rawExtract, err := json.Marshal(extract)
+// 	utils.PanicError("Marshal extract ", err)
 
-	rawSigned, err := esign.SignPersonal(iotPrv, rawExtract)
-	utils.PanicError("Sign extract ", err)
+// 	rawSigned, err := esign.SignPersonal(iotPrv, rawExtract)
+// 	utils.PanicError("Sign extract ", err)
 
-	var metric = &models.Metric{
-		Address:   "0x6CFF13d489623029d4d102Fa81947527E175BA8D",
-		Data:      hexutil.Encode(rawExtract),
-		Signed:    hexutil.Encode(rawSigned),
-		Extract:   *extract,
-		CreatedAt: time.Now(),
-	}
+// 	var metric = &models.Metric{
+// 		Address:   "0x6CFF13d489623029d4d102Fa81947527E175BA8D",
+// 		Data:      hexutil.Encode(rawExtract),
+// 		Signed:    hexutil.Encode(rawSigned),
+// 		Extract:   *extract,
+// 		CreatedAt: time.Now(),
+// 	}
 
-	metric.Extract = models.ExtractMetric{}
-	utils.Dump("", metric)
+// 	metric.Extract = models.ExtractMetric{}
+// 	utils.Dump("", metric)
 
-	err = iotRepoTest.CreateMetric(metric)
-	utils.PanicError("Create iot metrics ", err)
-}
+// 	err = iotRepoTest.CreateMetric(metric)
+// 	utils.PanicError("Create iot metrics ", err)
+// }
 
-func TestGetMetrics(t *testing.T) {
-	var now = time.Now().Unix()
-	var from = now - 86400*365*2
-	var data, err = iotRepoTest.GetMetrics(
-		"0x6CFF13d489623029d4d102Fa81947527E175BA8D",
-		from,
-		now,
-	)
-	utils.PanicError("TestGetMetrics", err)
-	utils.Dump("TestGetMetrics", data)
-}
+// func TestGetMetrics(t *testing.T) {
+// 	var now = time.Now().Unix()
+// 	var from = now - 86400*365*2
+// 	var data, err = iotRepoTest.GetMetrics(
+// 		"0x6CFF13d489623029d4d102Fa81947527E175BA8D",
+// 		from,
+// 		now,
+// 	)
+// 	utils.PanicError("TestGetMetrics", err)
+// 	utils.Dump("TestGetMetrics", data)
+// }
 
-func TestGetRawMetrics(t *testing.T) {
-	var data, err = iotRepoTest.GetRawMetric("c419eb47-250e-44ec-98e1-f86b1a813520")
-	utils.PanicError("TestGetRawMetrics", err)
-	utils.Dump("TestGetRawMetrics", data)
-}
+// func TestGetRawMetrics(t *testing.T) {
+// 	var data, err = iotRepoTest.GetRawMetric("c419eb47-250e-44ec-98e1-f86b1a813520")
+// 	utils.PanicError("TestGetRawMetrics", err)
+// 	utils.Dump("TestGetRawMetrics", data)
+// }
 
 func TestCreateMint(t *testing.T) {
 	var sign = &models.MintSign{

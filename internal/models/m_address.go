@@ -27,6 +27,10 @@ func (addr *EthAddress) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
+	if string(data) == `""` {
+		return nil
+	}
+
 	if len(data) < 2 || data[0] != '"' || data[len(data)-1] != '"' {
 		return errors.New("input for address is invalid")
 	}

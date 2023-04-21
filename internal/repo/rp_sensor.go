@@ -212,7 +212,7 @@ func (impl *SensorRepo) insertMetricFloat(smx *models.SMExtract, signed *models.
 	sm := &models.SmFloat{
 		ID:        uuid.NewV4().String(),
 		SignID:    signed.ID,
-		Indicator: float64(smx.Indicator.Value),
+		Indicator: float64(smx.Indicator.Val),
 		CreatedAt: time.Unix(smx.To, 0),
 	}
 
@@ -263,7 +263,13 @@ func (impl *SensorRepo) insertMetricGPS(smx *models.SMExtract, signed *models.Sm
 
 func (impl *SensorRepo) GetMetrics(req *domain.RGetSM) ([]*models.SmFloat, error) {
 	var rs = make([]*models.SmFloat, 0)
-	var query = impl.tblFloatMetrics()
+	var query = impl.tblFloatMetrics().Order("created_at asc")
+	if req.From > 0 {
+		query = query.Where("created_at > ?", time.Unix(req.From, 0))
+	}
+	if req.To > 0 {
+		query = query.Where("created_at < ?", time.Unix(req.To, 0))
+	}
 	var err = query.Find(&rs).Error
 	if nil != err {
 		return nil, models.ParsePostgresError("Get metrics", err)

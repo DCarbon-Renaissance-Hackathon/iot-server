@@ -3,6 +3,7 @@ package repo
 import (
 	"fmt"
 	"log"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,7 +19,7 @@ var uRepo domain.IUser
 var adminAddr = models.EthAddress(utils.StringEnv("ADMIN_ADDRESS", ""))
 var adminPrv = utils.StringEnv("ADMIN_PRIVATE", "")
 
-var customPrv = utils.StringEnv("ADMIN_PRIVATE", "")
+// var customPrv = utils.StringEnv("ADMIN_PRIVATE", "")
 
 func init() {
 	err := InitRepo(dbUrlTest)
@@ -48,10 +49,12 @@ func TestUserUpdate(t *testing.T) {}
 
 func TestGenerateLoginSignature(t *testing.T) {
 	var now = time.Now().Unix()
-	var org = fmt.Sprintf("dcarbon_%d_%s", now, customPrv)
-	var signed, err = esign.SignPersonal(customPrv, []byte(org))
+	var org = fmt.Sprintf("dcarbon_%d_%s", now, strings.ToLower(string(adminAddr)))
+	var signed, err = esign.SignPersonal(adminPrv, []byte(org))
 	utils.PanicError("Login-SignPersonal", err)
 
+	log.Println("Now: ", now)
+	log.Println("Address: ", adminAddr)
 	log.Println("Signature hex: ", hexutil.Encode(signed))
 	log.Println("Org: ", string(org))
 }

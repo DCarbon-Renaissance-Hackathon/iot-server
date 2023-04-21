@@ -1,8 +1,6 @@
 package ctrls
 
 import (
-	"log"
-	"net/http"
 	"strconv"
 
 	"github.com/Dcarbon/go-shared/libs/esign"
@@ -56,7 +54,7 @@ func NewIotCtrl(typedDomain *esign.TypedDataDomain,
 // @Failure      400				{object}	models.Error
 // @Failure      404				{object}	models.Error
 // @Failure      500				{object}	models.Error
-// @Router       /iots/ [post]
+// @Router       /iots/				[post]
 func (ctrl *IotCtrl) Create(r *gin.Context) {
 	var iot = &models.IOTDevice{}
 	var err = r.Bind(iot)
@@ -162,27 +160,27 @@ func (ctrl *IotCtrl) GetByBB(r *gin.Context) {
 // @Success      200		{object}		models.Metric
 // @Failure      400		{object}		models.Error
 // @Router       /iots/{iotAddr}/metrics 	[post]
-func (ctrl *IotCtrl) CreateMetric(r *gin.Context) {
-	var payload = &models.Metric{}
-	var err = r.BindJSON(payload)
-	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Payload must be json: "+err.Error()))
-		return
-	}
+// func (ctrl *IotCtrl) CreateMetric(r *gin.Context) {
+// 	var payload = &models.Metric{}
+// 	var err = r.BindJSON(payload)
+// 	if nil != err {
+// 		r.JSON(400, models.ErrBadRequest("Payload must be json: "+err.Error()))
+// 		return
+// 	}
 
-	err = payload.VerifySignature()
-	if nil != err {
-		r.JSON(400, err)
-	} else {
+// 	err = payload.VerifySignature()
+// 	if nil != err {
+// 		r.JSON(400, err)
+// 	} else {
 
-		err = ctrl.iotRepo.CreateMetric(payload)
-		if nil != err {
-			r.JSON(500, err)
-		} else {
-			r.JSON(http.StatusCreated, payload)
-		}
-	}
-}
+// 		err = ctrl.iotRepo.CreateMetric(payload)
+// 		if nil != err {
+// 			r.JSON(500, err)
+// 		} else {
+// 			r.JSON(http.StatusOK, payload)
+// 		}
+// 	}
+// }
 
 // GetRawMetric godoc
 // @Summary      Get list metric of iot
@@ -198,28 +196,28 @@ func (ctrl *IotCtrl) CreateMetric(r *gin.Context) {
 // @Failure      404		{object}	models.Error
 // @Failure      500		{object}	models.Error
 // @Router       /iots/{iotAddr}/metrics [get]
-func (ctrl *IotCtrl) GetMetrics(r *gin.Context) {
-	from, err := strconv.ParseInt(r.Query("from"), 10, 64)
-	if nil != err {
-		r.JSON(400, models.ErrQueryParam("from must be int"))
-		return
-	}
+// func (ctrl *IotCtrl) GetMetrics(r *gin.Context) {
+// 	from, err := strconv.ParseInt(r.Query("from"), 10, 64)
+// 	if nil != err {
+// 		r.JSON(400, models.ErrQueryParam("from must be int"))
+// 		return
+// 	}
 
-	to, err := strconv.ParseInt(r.Query("to"), 10, 64)
-	if nil != err {
-		r.JSON(400, models.ErrQueryParam("to must be int"))
-		return
-	}
+// 	to, err := strconv.ParseInt(r.Query("to"), 10, 64)
+// 	if nil != err {
+// 		r.JSON(400, models.ErrQueryParam("to must be int"))
+// 		return
+// 	}
 
-	var addr = r.Param("iotAddr")
-	log.Printf("Add:%s from:%d to:%d\n", addr, from, to)
-	data, err := ctrl.iotRepo.GetMetrics(addr, from, to)
-	if nil != err {
-		r.JSON(500, err)
-	} else {
-		r.JSON(200, data)
-	}
-}
+// 	var addr = r.Param("iotAddr")
+// 	log.Printf("Add:%s from:%d to:%d\n", addr, from, to)
+// 	data, err := ctrl.iotRepo.GetMetrics(addr, from, to)
+// 	if nil != err {
+// 		r.JSON(500, err)
+// 	} else {
+// 		r.JSON(200, data)
+// 	}
+// }
 
 // GetRawMetric		godoc
 // @Summary			Show raw metric from iot
@@ -234,21 +232,21 @@ func (ctrl *IotCtrl) GetMetrics(r *gin.Context) {
 // @Failure			404				{object}			models.Error
 // @Failure			500				{object}			models.Error
 // @Router			/iots/{iotAddr}/metrics/{metricId} [get]
-func (ctrl *IotCtrl) GetRawMetric(r *gin.Context) {
-	var iotAddr = r.Param("iotAddr")
-	var metricId = r.Param("metricId")
-	if iotAddr == "" || metricId == "" {
-		r.JSON(500, models.ErrBadRequest("Missing metric id "))
-		return
-	}
+// func (ctrl *IotCtrl) GetRawMetric(r *gin.Context) {
+// 	var iotAddr = r.Param("iotAddr")
+// 	var metricId = r.Param("metricId")
+// 	if iotAddr == "" || metricId == "" {
+// 		r.JSON(500, models.ErrBadRequest("Missing metric id "))
+// 		return
+// 	}
 
-	data, err := ctrl.iotRepo.GetRawMetric(metricId)
-	if nil != err {
-		r.JSON(500, err)
-	} else {
-		r.JSON(200, data)
-	}
-}
+// 	data, err := ctrl.iotRepo.GetRawMetric(metricId)
+// 	if nil != err {
+// 		r.JSON(500, err)
+// 	} else {
+// 		r.JSON(200, data)
+// 	}
+// }
 
 // GetRawMetric		godoc
 // @Summary			IOT save mint signature
@@ -258,7 +256,7 @@ func (ctrl *IotCtrl) GetRawMetric(r *gin.Context) {
 // @Produce			json
 // @Param			iotAddr			path		string				true	"IOT address"
 // @Param			iot				body		models.MintSign		true	"Signature"
-// @Success			200				{object}	models.Metric
+// @Success			200				{object}	models.MintSign
 // @Failure			400				{object}	models.Error
 // @Failure			404				{object}	models.Error
 // @Failure			500				{object}	models.Error
@@ -327,29 +325,29 @@ func (ctrl *IotCtrl) GetMintSigns(r *gin.Context) {
 // @Failure			404				{object}	models.Error
 // @Failure			500				{object}	models.Error
 // @Router			/iots/{iotAddr}/get-tt [get]
-func (ctrl *IotCtrl) GetTT(r *gin.Context) {
-	var iotAddress = r.Param("iotAddr")
-	if iotAddress == "" {
-		r.JSON(400, models.ErrBadRequest("Missing iot address"))
-		return
-	}
+// func (ctrl *IotCtrl) GetTT(r *gin.Context) {
+// 	var iotAddress = r.Param("iotAddr")
+// 	if iotAddress == "" {
+// 		r.JSON(400, models.ErrBadRequest("Missing iot address"))
+// 		return
+// 	}
 
-	var fromNonce, err = strconv.ParseInt(r.Query("fromNonce"), 10, 64)
-	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Missing iot nonce"))
-		return
-	}
+// 	var fromNonce, err = strconv.ParseInt(r.Query("fromNonce"), 10, 64)
+// 	if nil != err {
+// 		r.JSON(400, models.ErrBadRequest("Missing iot nonce"))
+// 		return
+// 	}
 
-	signeds, err := ctrl.iotRepo.GetMintSigns(iotAddress, int(fromNonce))
-	if nil != err {
-		r.JSON(500, err)
-		return
-	} else {
-		r.JSON(200, signeds)
-	}
-}
+// 	signeds, err := ctrl.iotRepo.GetMintSigns(iotAddress, int(fromNonce))
+// 	if nil != err {
+// 		r.JSON(500, err)
+// 		return
+// 	} else {
+// 		r.JSON(200, signeds)
+// 	}
+// }
 
-// GetRawMetric		godoc
+// GetDomainSeperator		godoc
 // @Summary			GetDomainSeperator
 // @Description		Get domain separator
 // @Tags			Iots

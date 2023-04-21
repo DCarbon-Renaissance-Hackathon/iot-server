@@ -51,7 +51,7 @@ func TestMintSignAndVerify(t *testing.T) {
 
 func TestFloat(t *testing.T) {
 	var d = &DefaultMetric{
-		Value: 100.1,
+		Val: 100.1,
 	}
 
 	raw, err := json.Marshal(d)

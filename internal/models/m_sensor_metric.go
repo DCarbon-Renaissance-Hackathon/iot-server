@@ -1,7 +1,9 @@
 package models
 
 import (
+	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -12,6 +14,13 @@ import (
 )
 
 var regString = regexp.MustCompile(`"*"$`)
+
+type Sm struct {
+	ID        string     `gorm:"primaryKey"`
+	SignID    string     ``
+	Indicator *AllMetric `gorm:"type:json"`
+	CreatedAt time.Time  ``
+}
 
 // Sensor metric
 type SmFloat struct {
@@ -108,12 +117,12 @@ func (smx *SMExtract) Signed(pkey string) (*SmSignature, error) {
 }
 
 type DefaultMetric struct {
-	Value Float64 `json:"value"`
+	Val Float64 `json:"value,omitempty"`
 }
 
 type GPSMetric struct {
-	Lat Float64 `json:"lat"`
-	Lng Float64 `json:"lng"`
+	Lat Float64 `json:"lat,omitempty"`
+	Lng Float64 `json:"lng,omitempty"`
 }
 
 type AllMetric struct {
@@ -121,14 +130,46 @@ type AllMetric struct {
 	GPSMetric
 }
 
+func (am *AllMetric) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	var rs = &AllMetric{}
+	var err error
+	switch vt := value.(type) {
+	case string:
+		if vt == `""` {
+			return nil
+		}
+		err = json.Unmarshal([]byte(vt), rs)
+	case []byte:
+		err = json.Unmarshal(vt, rs)
+	default:
+		return errors.New("can't scan metric")
+	}
+	if nil != err {
+		return err
+	}
+	if nil == am {
+		am = new(AllMetric)
+	}
+	*am = *rs
+	return nil
+}
+
+func (am AllMetric) Value() (driver.Value, error) {
+	return json.Marshal(am)
+}
+
 func (am *AllMetric) IsValid(sType SensorType) error {
 	switch sType {
 	case SensorTypeFlow:
-		if am.DefaultMetric.Value <= 0 {
+		if am.DefaultMetric.Val <= 0 {
 			return NewError(ECodeSensorInvalidMetric, "Indicator of metric (value) must be > 0")
 		}
 	case SensorTypePower:
-		if am.DefaultMetric.Value <= 0 {
+		if am.DefaultMetric.Val <= 0 {
 			return NewError(ECodeSensorInvalidMetric, "Indicator of metric (value) must be > 0")
 		}
 	case SensorTypeGPS:
