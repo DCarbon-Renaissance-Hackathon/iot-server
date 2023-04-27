@@ -17,8 +17,8 @@ type UserCtrl struct {
 	tokenDuration int64
 }
 
-func NewUserCtrl(dbUrl, jwtKey string, tokenDuration int64) (*UserCtrl, error) {
-	userRepo, err := repo.NewUserRepo(dbUrl)
+func NewUserCtrl(jwtKey string, tokenDuration int64) (*UserCtrl, error) {
+	userRepo, err := repo.NewUserRepo()
 	if nil != err {
 		return nil, err
 	}
@@ -68,7 +68,6 @@ func (ctrl *UserCtrl) Login(r *gin.Context) {
 		Token: token,
 		User:  user,
 	})
-
 }
 
 // Create godoc

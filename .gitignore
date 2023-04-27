@@ -3,7 +3,7 @@
 docs
 test
 scripts
-
+static
 
 *.exe
 *.exe~

@@ -22,10 +22,12 @@ var adminPrv = utils.StringEnv("ADMIN_PRIVATE", "")
 // var customPrv = utils.StringEnv("ADMIN_PRIVATE", "")
 
 func init() {
-	err := InitRepo(dbUrlTest)
-	utils.PanicError("", err)
+	var err error
 
-	uRepo, err = NewUserRepo(dbUrlTest)
+	// err := rss.InitResource(dbUrlTest, redisUrl)
+	// utils.PanicError("", err)
+
+	uRepo, err = NewUserRepo()
 	utils.PanicError("", err)
 }
 

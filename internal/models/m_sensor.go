@@ -13,21 +13,21 @@ const (
 	SensorTypeGPS   SensorType = 3
 )
 
-type SensorStatus int32
+type DeviceStatus int32
 
 const (
-	SensorStatusReject   SensorStatus = -1
-	SensorStatusRegister SensorStatus = 0
-	SensorStatusSuccess  SensorStatus = 10
+	DeviceStatusReject   DeviceStatus = -1
+	DeviceStatusRegister DeviceStatus = 0
+	DeviceStatusSuccess  DeviceStatus = 10
 )
 
 type Sensor struct {
-	ID        int64        ``
-	IotID     int64        ``
-	Address   *EthAddress  `gorm:"index:,unique,where:length(address) > 0"`
-	Type      SensorType   ``
-	Status    SensorStatus ``
-	CreatedAt time.Time    ``
+	ID        int64        `json:"id"`
+	IotID     int64        `json:"iotId"`
+	Address   *EthAddress  `json:"address" gorm:"index:,unique,where:length(address) > 0"`
+	Type      SensorType   `json:"type"`
+	Status    DeviceStatus `json:"status"`
+	CreatedAt time.Time    `json:"createdAt"`
 }
 
 func (*Sensor) TableName() string { return TableNameSensors }

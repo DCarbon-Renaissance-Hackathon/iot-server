@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dcarbon/go-shared/libs/utils"
 	"github.com/Dcarbon/iott-cloud/internal/api/routers"
+	"github.com/Dcarbon/iott-cloud/internal/env"
 
 	"github.com/Dcarbon/iott-cloud/cmd/iott-cloud/docs"
 
@@ -14,13 +15,15 @@ import (
 )
 
 var config = routers.Config{
-	Port:          utils.IntEnv("DCENTER_PORT", 8081),
+	Port:          utils.IntEnv("PORT", 4001),
 	DBUrl:         utils.StringEnv("DB_URL", ""),
+	RedisUrl:      utils.StringEnv("REDIS_URL", ""),
 	JwtKey:        utils.StringEnv("JWT_KEY", ""),
 	TokenDuration: utils.Int64Env("TOKEN_DURATION", 1*365*86400),
 	ChainID:       utils.Int64Env("CHAIN_ID", 1),
 	CarbonVersion: utils.StringEnv("CARBON_VERSION", "1"),
 	CarbonAddress: utils.StringEnv("CARBON_ADDRESS", "0x7BDDCb9699a3823b8B27158BEBaBDE6431152a85"),
+	StorageHost:   env.StorageHost,
 }
 
 // @title           Swagger Example API
@@ -35,10 +38,8 @@ func main() {
 	docs.SwaggerInfo.Version = "1.0.0"
 	docs.SwaggerInfo.Description = "Internet of trusted thing cloud"
 	docs.SwaggerInfo.BasePath = "/api/v1"
-	docs.SwaggerInfo.Schemes = []string{
-		utils.StringEnv("SERVER_SCHEME", "http"),
-	}
-	docs.SwaggerInfo.Host = utils.StringEnv("SERVER_HOST", "localhost:8081")
+	docs.SwaggerInfo.Schemes = []string{env.ServerScheme}
+	docs.SwaggerInfo.Host = env.ServerHost
 
 	var rt, err = routers.NewRouter(config)
 	utils.PanicError("Create router", err)

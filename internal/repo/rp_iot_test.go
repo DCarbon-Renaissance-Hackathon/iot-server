@@ -3,6 +3,7 @@ package repo
 import (
 	"log"
 	"testing"
+	"time"
 
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/go-shared/libs/utils"
@@ -32,9 +33,7 @@ var testDomainMinter = esign.MustNewERC712(
 )
 
 func init() {
-	err := InitRepo(dbUrlTest)
-	utils.PanicError("", err)
-
+	var err error
 	iotRepoTest, err = NewIOTRepo(testDomainMinter)
 	if nil != err {
 		panic(err.Error())
@@ -42,8 +41,8 @@ func init() {
 }
 
 func TestIOTCreate(t *testing.T) {
-	err := iotRepoTest.Create(&models.IOTDevice{
-		Project: 0,
+	iot, err := iotRepoTest.Create(&domain.RIotCreate{
+		Project: 1,
 		Type:    models.IOTTypeBurnMethane,
 		Address: "0x1064F6f232bdD6E38a248C0C3a1456b023f05e3B",
 		Position: models.Point4326{
@@ -53,12 +52,15 @@ func TestIOTCreate(t *testing.T) {
 	})
 
 	utils.PanicError("Create iot device ", err)
+	utils.Dump("IOT created", iot)
 }
 
 func TestIOTChangeStatus(t *testing.T) {
 	var data, err = iotRepoTest.ChangeStatus(
-		"0x1064F6f232bdD6E38a248C0C3a1456b023f05e3B",
-		models.IOTStatusSuccess,
+		&domain.RIotChangeStatus{
+			IotId:  1,
+			Status: models.DeviceStatusSuccess,
+		},
 	)
 	utils.PanicError("Update iot status ", err)
 	utils.Dump("TestIOTChangeStatus", data)
@@ -149,7 +151,11 @@ func TestCreateMint(t *testing.T) {
 }
 
 func TestGetMint(t *testing.T) {
-	var signeds, err = iotRepoTest.GetMintSigns(iotAddr, 0)
+	var signeds, err = iotRepoTest.GetMintSigns(&domain.RIotGetMintSignList{
+		From:  time.Now().Unix() - 60*86400,
+		To:    time.Now().Unix(),
+		IotId: 16,
+	})
 	utils.PanicError("TestGetMint", err)
 	utils.Dump("TestGetMint", signeds)
 }

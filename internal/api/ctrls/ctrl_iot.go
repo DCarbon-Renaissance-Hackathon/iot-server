@@ -1,18 +1,23 @@
 package ctrls
 
 import (
+	"log"
 	"strconv"
 
+	"github.com/Dcarbon/go-shared/libs/broker"
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/repo"
+	"github.com/Dcarbon/iott-cloud/internal/rss"
 	"github.com/gin-gonic/gin"
 )
 
 type IotCtrl struct {
-	iotRepo   domain.IIot
 	separator *esign.TypedDataDomain // Domain seperator
+	iot       domain.IIot
+	sensor    domain.ISensor
+	pusher    *broker.IOTEvent
 }
 
 func NewIotCtrl(typedDomain *esign.TypedDataDomain,
@@ -35,11 +40,17 @@ func NewIotCtrl(typedDomain *esign.TypedDataDomain,
 	if nil != err {
 		return nil, err
 	}
+
 	var ctrl = &IotCtrl{
-		iotRepo:   irepo,
+		iot:       irepo,
 		separator: typedDomain,
+		pusher:    broker.NewIOTEvent(rss.GetRabbitPusher()),
 	}
 	return ctrl, nil
+}
+
+func (ctrl *IotCtrl) SetSensor(sensor domain.ISensor) {
+	ctrl.sensor = sensor
 }
 
 // Create godoc
@@ -48,7 +59,7 @@ func NewIotCtrl(typedDomain *esign.TypedDataDomain,
 // @Tags         Iots
 // @Accept       json
 // @Produce      json
-// @Param        iot   				body		models.IOTDevice	true	"IOT information"
+// @Param        iot   				body		RIotCreate			true	"IOT information"
 // @Param        Authorization		header		string				true	"Authorization token (`Bearer $token`)"
 // @Success      200				{object}	models.IOTDevice
 // @Failure      400				{object}	models.Error
@@ -56,17 +67,55 @@ func NewIotCtrl(typedDomain *esign.TypedDataDomain,
 // @Failure      500				{object}	models.Error
 // @Router       /iots/				[post]
 func (ctrl *IotCtrl) Create(r *gin.Context) {
-	var iot = &models.IOTDevice{}
-	var err = r.Bind(iot)
+	var payload = &domain.RIotCreate{}
+	var err = r.Bind(payload)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest(err.Error()))
+		return
+	}
+
+	iot, err := ctrl.iot.Create(payload)
+	if nil != err {
+		r.JSON(500, err)
+		return
+	}
+
+	r.JSON(200, iot)
+	ctrl.pusher.PushIOTCreate(&broker.EventIOTCreate{
+		ID:      iot.ID,
+		Status:  broker.DeviceStatus(iot.Status),
+		Address: string(iot.Address),
+		Location: &broker.GPS{
+			Lng: iot.Position.Lng,
+			Lat: iot.Position.Lat,
+		},
+	})
+}
+
+// Create godoc
+// @Summary      GetIot
+// @Description  Get iot by id
+// @Tags         Iots
+// @Accept       json
+// @Produce      json
+// @Param        iotId				path  		int 				true	"IOT id"
+// @Success      200				{object}	models.IOTDevice
+// @Failure      400				{object}	models.Error
+// @Failure      404				{object}	models.Error
+// @Failure      500				{object}	models.Error
+// @Router       /iots/{iotId}		[get]
+func (ctrl *IotCtrl) GetIot(r *gin.Context) {
+	iotId, err := strconv.Atoi(r.Param("iotId"))
+	if nil != err {
+		r.JSON(400, models.ErrBadRequest("Invalid iot id (Must be integer)"))
+		return
+	}
+
+	iot, err := ctrl.iot.GetIOT(int64(iotId))
+	if nil != err {
+		r.JSON(500, err)
 	} else {
-		err = ctrl.iotRepo.Create(iot)
-		if nil != err {
-			r.JSON(500, err)
-		} else {
-			r.JSON(200, iot)
-		}
+		r.JSON(200, iot)
 	}
 }
 
@@ -76,25 +125,59 @@ func (ctrl *IotCtrl) Create(r *gin.Context) {
 // @Tags         Iots
 // @Accept       json
 // @Produce      json
-// @Param        payload			body		RIOTChangeStatus	true	"IOT address"
-// @Param        iotId				path  		string 				true	"IOT id"
+// @Param        payload			body		RIotChangeStatus	true	"Payload"
+// @Param        iotId				path  		int 				true	"IOT id"
 // @Param        Authorization		header		string				true	"Authorization token (`Bearer $token`)"
 // @Success      200				{object}	models.IOTDevice
 // @Failure      400				{object}	models.Error
 // @Router       /iots/{iotId}/change-status [put]
 func (ctrl *IotCtrl) ChangeStatus(r *gin.Context) {
-	var payload = &RIOTChangeStatus{}
+	var payload = &domain.RIotChangeStatus{}
 	var err = r.Bind(payload)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest(err.Error()))
-	} else {
-		iot, err := ctrl.iotRepo.ChangeStatus(payload.Address, payload.Status)
+		return
+	}
+
+	iotId, err := strconv.Atoi(r.Param("iotId"))
+	if nil != err {
+		r.JSON(400, models.ErrBadRequest("Invalid iot id (Must be integer)"))
+		return
+	}
+
+	iot, err := ctrl.iot.ChangeStatus(&domain.RIotChangeStatus{
+		IotId:  int64(iotId),
+		Status: payload.Status,
+	})
+	if nil != err {
+		r.JSON(500, err)
+		return
+	}
+
+	if ctrl.sensor != nil {
+		sensors, err := ctrl.sensor.GetSensors(&domain.RGetSensors{})
 		if nil != err {
-			r.JSON(500, err)
+			log.Println("Get list sensor error: ", err)
 		} else {
-			r.JSON(200, iot)
+			for _, ss := range sensors {
+				// if ss.Status != models.DeviceStatusRegister {
+				// 	continue
+				// }
+
+				ctrl.sensor.ChangeSensorStatus(&domain.RChangeSensorStatus{
+					Status: payload.Status,
+					ID:     ss.ID,
+				})
+			}
 		}
 	}
+
+	r.JSON(200, iot)
+	ctrl.pusher.PushIOTChangeStatus(&broker.EventIOTChangeStatus{
+		ID:     iot.ID,
+		Status: broker.DeviceStatus(iot.Status),
+	})
+
 }
 
 // Create godoc
@@ -141,13 +224,111 @@ func (ctrl *IotCtrl) GetByBB(r *gin.Context) {
 		Lng: maxLng,
 		Lat: maxLat,
 	}
-	data, err := ctrl.iotRepo.GetByBB(min, max)
+	data, err := ctrl.iot.GetByBB(min, max)
 	if nil != err {
 		r.JSON(500, err)
 	} else {
 		r.JSON(200, data)
 	}
 }
+
+// GetRawMetric		godoc
+// @Summary			IOT save mint signature
+// @Description		IOT save mint signature
+// @Tags			Iots
+// @Accept			json
+// @Produce			json
+// @Param			iotAddr			path		string				true	"IOT address"
+// @Param			iot				body		models.MintSign		true	"Signature"
+// @Success			200				{object}	models.MintSign
+// @Failure			400				{object}	models.Error
+// @Failure			404				{object}	models.Error
+// @Failure			500				{object}	models.Error
+// @Router			/iots/{iotAddr}/mint-sign	[post]
+func (ctrl *IotCtrl) CreateMint(r *gin.Context) {
+	var mint = &models.MintSign{}
+	var err = r.BindJSON(mint)
+	if nil != err {
+		r.JSON(400, models.ErrBadRequest("Payload must be json: "+err.Error()))
+		return
+	}
+
+	err = ctrl.iot.CreateMint(mint)
+	if nil != err {
+		r.JSON(500, err)
+	} else {
+		r.JSON(200, mint)
+	}
+}
+
+// GetRawMetric		godoc
+// @Summary			Get mint signature of iot
+// @Description		Get mint signature of iot
+// @Tags			Iots
+// @Accept			json
+// @Produce			json
+// @Param			iotId			path		number  			true  "IOT id"
+// @Param			from			query		number				true  "Duration start"
+// @Param			to				query		number				true  "Duration end"
+// @Success			200				{array}		models.MintSign
+// @Failure			400				{object}	models.Error
+// @Failure			404				{object}	models.Error
+// @Failure			500				{object}	models.Error
+// @Router			/iots/{iotId}/mint-sign/ 	[get]
+func (ctrl *IotCtrl) GetMintSigns(r *gin.Context) {
+	iotId, err := strconv.ParseInt(r.Param("iotId"), 10, 64)
+	if nil != err {
+		r.JSON(400, models.ErrBadRequest("Invalid iot id (Must be integer)"))
+		return
+	}
+	from, err := strconv.ParseInt(r.Query("from"), 10, 64)
+	if nil != err {
+		r.JSON(400, models.ErrBadRequest("Missing duration start"))
+		return
+	}
+
+	to, err := strconv.ParseInt(r.Query("to"), 10, 64)
+	if nil != err {
+		r.JSON(400, models.ErrBadRequest("Missing duration start"))
+		return
+	}
+
+	signeds, err := ctrl.iot.GetMintSigns(&domain.RIotGetMintSignList{
+		From:  from,
+		To:    to,
+		IotId: iotId,
+	})
+	if nil != err {
+		r.JSON(500, err)
+		return
+	} else {
+		r.JSON(200, signeds)
+	}
+}
+
+// GetDomainSeperator		godoc
+// @Summary			GetDomainSeperator
+// @Description		Get domain separator
+// @Tags			Iots
+// @Accept			json
+// @Produce			json
+// @Success			200				{integer}	esign.TypedDataDomain
+// @Failure			400				{object}	models.Error
+// @Failure			404				{object}	models.Error
+// @Failure			500				{object}	models.Error
+// @Router			/iots/seperator [get]
+func (ctrl *IotCtrl) GetDomainSeperator(r *gin.Context) {
+	r.JSON(200, ctrl.separator)
+}
+
+func (ctrl *IotCtrl) GetIOTRepo() domain.IIot {
+	return ctrl.iot
+}
+
+// type RIOTChangeStatus struct {
+// 	// Address string              `json:"address"`
+// 	Status models.DeviceStatus `json:"status"`
+// }
 
 // GetRawMetric godoc
 // @Summary      Create metrics (only for iot)
@@ -249,70 +430,6 @@ func (ctrl *IotCtrl) GetByBB(r *gin.Context) {
 // }
 
 // GetRawMetric		godoc
-// @Summary			IOT save mint signature
-// @Description		IOT save mint signature
-// @Tags			Iots
-// @Accept			json
-// @Produce			json
-// @Param			iotAddr			path		string				true	"IOT address"
-// @Param			iot				body		models.MintSign		true	"Signature"
-// @Success			200				{object}	models.MintSign
-// @Failure			400				{object}	models.Error
-// @Failure			404				{object}	models.Error
-// @Failure			500				{object}	models.Error
-// @Router			/iots/{iotAddr}/mint-sign	[post]
-func (ctrl *IotCtrl) CreateMint(r *gin.Context) {
-	var mint = &models.MintSign{}
-	var err = r.BindJSON(mint)
-	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Payload must be json: "+err.Error()))
-		return
-	}
-
-	err = ctrl.iotRepo.CreateMint(mint)
-	if nil != err {
-		r.JSON(500, err)
-	} else {
-		r.JSON(200, mint)
-	}
-}
-
-// GetRawMetric		godoc
-// @Summary			Get mint signature of iot
-// @Description		Get mint signature of iot
-// @Tags			Iots
-// @Accept			json
-// @Produce			json
-// @Param			iotAddr			path		string  			true  "IOT address"
-// @Param			fromNonce		query		number				true  "LatestNonce"
-// @Success			200				{array}		models.MintSign
-// @Failure			400				{object}	models.Error
-// @Failure			404				{object}	models.Error
-// @Failure			500				{object}	models.Error
-// @Router			/iots/{iotAddr}/mint-sign/ [get]
-func (ctrl *IotCtrl) GetMintSigns(r *gin.Context) {
-	var iotAddress = r.Param("iotAddr")
-	if iotAddress == "" {
-		r.JSON(400, models.ErrBadRequest("Missing iot address"))
-		return
-	}
-
-	var fromNonce, err = strconv.ParseInt(r.Query("fromNonce"), 10, 64)
-	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Missing iot nonce"))
-		return
-	}
-
-	signeds, err := ctrl.iotRepo.GetMintSigns(iotAddress, int(fromNonce))
-	if nil != err {
-		r.JSON(500, err)
-		return
-	} else {
-		r.JSON(200, signeds)
-	}
-}
-
-// GetRawMetric		godoc
 // @Summary			Get mint signature of iot
 // @Description		Get mint signature of iot
 // @Tags			Iots
@@ -346,27 +463,3 @@ func (ctrl *IotCtrl) GetMintSigns(r *gin.Context) {
 // 		r.JSON(200, signeds)
 // 	}
 // }
-
-// GetDomainSeperator		godoc
-// @Summary			GetDomainSeperator
-// @Description		Get domain separator
-// @Tags			Iots
-// @Accept			json
-// @Produce			json
-// @Success			200				{integer}	esign.TypedDataDomain
-// @Failure			400				{object}	models.Error
-// @Failure			404				{object}	models.Error
-// @Failure			500				{object}	models.Error
-// @Router			/iots/seperator [get]
-func (ctrl *IotCtrl) GetDomainSeperator(r *gin.Context) {
-	r.JSON(200, ctrl.separator)
-}
-
-func (ctrl *IotCtrl) GetIOTRepo() domain.IIot {
-	return ctrl.iotRepo
-}
-
-type RIOTChangeStatus struct {
-	Address string           `json:"address"`
-	Status  models.IOTStatus `json:"status"`
-}

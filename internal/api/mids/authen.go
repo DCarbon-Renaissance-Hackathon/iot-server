@@ -26,7 +26,7 @@ type customClaim struct {
 }
 
 type ClaimModel struct {
-	Id         int64  `json:"id,omitempty"`
+	ID         int64  `json:"id,omitempty"`
 	Role       string `json:"role,omitempty"`
 	Name       string `json:"name,omitempty"`
 	EthAddress string `json:"eth,omitempty"`
@@ -54,7 +54,8 @@ func (a2 *A2M) HandlerFunc(r *gin.Context) {
 		return
 	}
 
-	var user, err = DecodeJWT(a2.jwtKey, authToken[7:])
+	var tokenStr = authToken[7:]
+	var user, err = DecodeJWT(a2.jwtKey, tokenStr)
 	if nil != err {
 		fmt.Println("Decode jwt error: ", err)
 		r.AbortWithError(http.StatusUnauthorized, models.ErrorUnauthorized)
@@ -96,7 +97,7 @@ func DecodeJWT(key string, token string) (*ClaimModel, error) {
 func EncodeJWT(key string, user *models.User, duration int64) (string, error) {
 	var claim = &customClaim{
 		ClaimModel: &ClaimModel{
-			Id:         user.ID,
+			ID:         user.ID,
 			Role:       user.Role,
 			Name:       user.Name,
 			EthAddress: string(user.Address),
@@ -109,8 +110,8 @@ func EncodeJWT(key string, user *models.User, duration int64) (string, error) {
 	return token.SignedString([]byte(key))
 }
 
-func GetAuth(ctx context.Context) (*models.User, error) {
-	var user = ctx.Value(ctxKey).(*models.User)
+func GetAuth(ctx context.Context) (*ClaimModel, error) {
+	var user = ctx.Value(ctxKey).(*ClaimModel)
 	if nil == user {
 		return nil, models.ErrorUnauthorized
 	}

@@ -1,13 +1,5 @@
 package models
 
-type IOTStatus int
-
-const (
-	IOTStatusReject   IOTStatus = -1
-	IOTStatusRegister IOTStatus = 0
-	IOTStatusSuccess  IOTStatus = 10
-)
-
 type IOTType int
 
 const (
@@ -19,13 +11,22 @@ const (
 	IOTTypeTrash       IOTType = 31
 )
 
+// Operator status
+type OpStatus int
+
+const (
+	OpStatusInactived OpStatus = -1
+	OpStatusWarning   OpStatus = 1
+	OpStatusActived   OpStatus = 10
+)
+
 type IOTDevice struct {
-	ID       int64      `json:"id" gorm:"primary_key"`
-	Project  int64      `json:"project" `
-	Address  EthAddress `json:"address" gorm:"unique"`
-	Type     IOTType    `json:"type" `
-	Status   IOTStatus  `json:"status"`
-	Position Point4326  `json:"position" gorm:"type:geometry(POINT, 4326)"`
+	ID       int64        `json:"id" gorm:"primary_key"`
+	Project  int64        `json:"project" `
+	Address  EthAddress   `json:"address" gorm:"unique"`
+	Type     IOTType      `json:"type" `
+	Status   DeviceStatus `json:"status"`
+	Position Point4326    `json:"position" gorm:"type:geometry(POINT, 4326)"`
 }
 
 func (*IOTDevice) TableName() string { return TableNameIOT }

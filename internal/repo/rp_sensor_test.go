@@ -17,20 +17,22 @@ var iotTestSensors = []*models.IOTDevice{
 		Project: 1,
 		Type:    models.IOTTypeBurnMethane,
 		Address: "0xE445517AbB524002Bb04C96F96aBb87b8B19b53d",
-		Status:  models.IOTStatusSuccess,
+		Status:  models.DeviceStatusSuccess,
 	},
 	{
 		ID:      2,
 		Project: 2,
 		Type:    models.IOTTypeFertilizer,
-		Status:  models.IOTStatusSuccess,
+		Status:  models.DeviceStatusSuccess,
 		Address: "0x19Adf96848504a06383b47aAA9BbBC6638E81afD",
 	},
 }
 
 func init() {
-	err := InitRepo(dbUrlTest)
-	utils.PanicError("", err)
+	var err error
+
+	// err := rss.InitResource(dbUrlTest, redisUrl)
+	// utils.PanicError("", err)
 
 	sensorImpl, err = NewSensorRepo()
 	utils.PanicError("", err)
@@ -74,7 +76,7 @@ func TestSensorCreate2(t *testing.T) {
 func TestSensorChangeStatus(t *testing.T) {
 	sensor, err := sensorImpl.ChangeSensorStatus(&domain.RChangeSensorStatus{
 		ID:     31,
-		Status: models.SensorStatusSuccess,
+		Status: models.DeviceStatusSuccess,
 	})
 	utils.PanicError("", err)
 	utils.Dump("Changed sensor", sensor)
@@ -102,9 +104,9 @@ func TestSensorCreateSM(t *testing.T) {
 	var sensorAddr = models.EthAddress("0x69d1a0c44837beba14b3f4dbb3384a546351e601")
 	var pKey = "0x0123456789012345678901234567890123456789012345678901234567890002"
 	var smx = &models.SMExtract{
-		From: 1578104101,
-		To:   1578104102,
-		Indicator: models.AllMetric{
+		From: 1578104105,
+		To:   1578104106,
+		Indicator: &models.AllMetric{
 			DefaultMetric: models.DefaultMetric{
 				Val: 10.1,
 			},
@@ -132,9 +134,9 @@ func TestSensorCreateSMFromIOT(t *testing.T) {
 	var iotAddr = models.EthAddress("0xE445517AbB524002Bb04C96F96aBb87b8B19b53d")
 	var pKey = "0x0123456789012345678901234567890123456789012345678901234567880000"
 	var smx = &models.SMExtract{
-		From: 1578104101,
-		To:   1578104102,
-		Indicator: models.AllMetric{
+		From: 1578104103,
+		To:   1578104104,
+		Indicator: &models.AllMetric{
 			DefaultMetric: models.DefaultMetric{
 				Val: 10.1,
 			},
@@ -159,7 +161,7 @@ func TestSensorGetSM(t *testing.T) {
 	data, err := sensorImpl.GetMetrics(&domain.RGetSM{
 		From:  1578104100,
 		To:    time.Now().Unix(),
-		IotId: 2,
+		IotId: 1,
 	})
 	utils.PanicError("", err)
 	utils.Dump("", data)
@@ -171,7 +173,7 @@ func TestGenerateSignMetric(t *testing.T) {
 	var smx = &models.SMExtract{
 		From: 1578104103,
 		To:   1578104104,
-		Indicator: models.AllMetric{
+		Indicator: &models.AllMetric{
 			DefaultMetric: models.DefaultMetric{
 				Val: 10.1,
 			},

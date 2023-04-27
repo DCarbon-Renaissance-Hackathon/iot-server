@@ -1,8 +1,11 @@
 package repo
 
 import (
+	"time"
+
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
+	"github.com/Dcarbon/iott-cloud/internal/rss"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -12,9 +15,10 @@ type projectRepo struct {
 }
 
 func NewProjectRepo() (domain.IProject, error) {
-	var db = getSingletonDB()
+	var db = rss.GetDB()
 	err := db.AutoMigrate(
 		&models.Project{},
+		&models.ProjectImage{},
 		&models.ProjectDescription{},
 		&models.ProjectSpec{},
 	)
@@ -28,10 +32,30 @@ func NewProjectRepo() (domain.IProject, error) {
 	return pp, nil
 }
 
-func (pRepo *projectRepo) Create(project *models.Project) error {
-	var err = pRepo.tblProject().Create(project).Error
+func (pRepo *projectRepo) Create(req *domain.RProjectCreate,
+) (*models.Project, error) {
+	var project = &models.Project{
+		ID:        0,
+		Status:    models.ProjectStatusRegister,
+		Owner:     req.Owner,
+		Location:  req.Location,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	var e1 = pRepo.tblProject().Transaction(func(dbTx *gorm.DB) error {
+		err := dbTx.Table(models.TableNameProject).Create(project).Error
+		if nil != err {
+			models.ParsePostgresError("Create project", err)
+		}
 
-	return models.ParsePostgresError("Project", err)
+		return nil
+	})
+
+	if nil != e1 {
+		return nil, e1
+	}
+
+	return project, nil
 }
 
 func (pRepo *projectRepo) UpdateDesc(req *models.ProjectDescription,
@@ -66,23 +90,28 @@ func (pRepo *projectRepo) UpdateSpec(req *models.ProjectSpec,
 	return req, nil
 }
 
-func (pRepo *projectRepo) GetById(id int64, lang string, withSpec bool) (*models.Project, error) {
+func (pRepo *projectRepo) GetById(id int64, lang string) (*models.Project, error) {
 	var project = &models.Project{}
-	var query = pRepo.tblProject().Where("id = ?", id)
+	var query = pRepo.tblProject().Where("id = ?", id).
+		Preload("Images", func(tx *gorm.DB) *gorm.DB {
+			return tx.Select("project_id, image")
+		}).
+		Preload("Specs")
 	if lang != "" {
 		query.Preload("Descs", func(tx *gorm.DB) *gorm.DB {
 			return tx.Where("language = ?", lang)
 		})
 	}
-	if withSpec {
-		query.Preload("Specs")
-	}
-	var err = query.First(project).Error
 
-	return project, models.ParsePostgresError("Project", err)
+	var err = query.First(project).Error
+	if nil != err {
+		return nil, models.ParsePostgresError("Project", err)
+	}
+
+	return project, nil
 }
 
-func (pRepo *projectRepo) GetList(filter *domain.RFilterProject,
+func (pRepo *projectRepo) GetList(filter *domain.RProjectFilter,
 ) ([]*models.Project, error) {
 	var tbl = pRepo.tblProject().Offset(filter.Skip)
 	if filter.Limit > 0 {
@@ -141,6 +170,21 @@ func (pRepo *projectRepo) GetOwner(projectId int64) (string, error) {
 	return owner, nil
 }
 
+func (pRepo *projectRepo) AddImage(req *domain.RProjectAddImage,
+) (*models.ProjectImage, error) {
+	var img = &models.ProjectImage{
+		ID:        0,
+		ProjectID: req.ProjectID,
+		Image:     req.ImgPath,
+		CreatedAt: time.Now(),
+	}
+	var err = pRepo.tblImage().Create(img).Error
+	if nil != err {
+		return nil, models.ParsePostgresError("AddImage ", err)
+	}
+	return img, nil
+}
+
 func (pRepo *projectRepo) tblProject() *gorm.DB {
 	return pRepo.db.Table(models.TableNameProject)
 }
@@ -151,4 +195,8 @@ func (pRepo *projectRepo) tblProjectDesc() *gorm.DB {
 
 func (pRepo *projectRepo) tblProjectSpec() *gorm.DB {
 	return pRepo.db.Table(models.TableNameProjectSpec)
+}
+
+func (pRepo *projectRepo) tblImage() *gorm.DB {
+	return pRepo.db.Table(models.TableNameProjectImage)
 }

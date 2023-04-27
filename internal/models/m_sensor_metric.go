@@ -15,12 +15,14 @@ import (
 
 var regString = regexp.MustCompile(`"*"$`)
 
-type Sm struct {
-	ID        string     `gorm:"primaryKey"`
-	SignID    string     ``
-	Indicator *AllMetric `gorm:"type:json"`
-	CreatedAt time.Time  ``
-}
+// Sensor metric data
+// type Sm struct {
+// 	ID        string     `gorm:"primaryKey"`
+// 	SignID    string     ``
+// 	Indicator *AllMetric `gorm:"type:json"`
+// 	CreatedAt time.Time  ``
+// }
+// func (*Sm) TableName() string { return TableNameSm }
 
 // Sensor metric
 type SmFloat struct {
@@ -77,7 +79,7 @@ func (sm *SmSignature) VerifySignature(addr EthAddress, sType SensorType) (*SMEx
 type SMExtract struct {
 	From      int64      `json:"from"`
 	To        int64      `json:"to"`
-	Indicator AllMetric  `json:"indicator"`
+	Indicator *AllMetric `json:"indicator"`
 	Address   EthAddress `json:"address"` // Sign (sensor or iot ) address
 }
 
@@ -179,14 +181,6 @@ func (am *AllMetric) IsValid(sType SensorType) error {
 	}
 	return nil
 }
-
-// type MetrictAggregate struct {
-// 	ID        string    ``
-// 	IotID     int64     ``
-// 	Type      int64     ``
-// 	Indicator float64   ``
-// 	CreatedAt time.Time ``
-// }
 
 type Float64 float64
 

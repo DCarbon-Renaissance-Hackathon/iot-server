@@ -2,9 +2,27 @@ package domain
 
 import "github.com/Dcarbon/iott-cloud/internal/models"
 
+type RIotCreate struct {
+	Project  int64             `json:"project" binding:"required"`
+	Address  models.EthAddress `json:"address" binding:"required"`
+	Type     models.IOTType    `json:"type"  binding:"required"`
+	Position models.Point4326  `json:"position" binding:"required"`
+} //@name RIotCreate
+
+type RIotChangeStatus struct {
+	IotId  int64               `json:"iotId" binding:"required"`
+	Status models.DeviceStatus `json:"status" binding:"required"`
+} //@name RIotChangeStatus
+
+type RIotGetMintSignList struct {
+	From  int64 `json:"from"  binding:"required"`
+	To    int64 `json:"to"  binding:"required"`
+	IotId int64 `json:"iotId"  binding:"required"`
+} //@name RIotGetMintSignList
+
 type IIot interface {
-	Create(iot *models.IOTDevice) error
-	ChangeStatus(iotAddr string, status models.IOTStatus) (*models.IOTDevice, error)
+	Create(*RIotCreate) (*models.IOTDevice, error)
+	ChangeStatus(*RIotChangeStatus) (*models.IOTDevice, error)
 	GetByBB(min, max *models.Point4326) ([]*models.IOTDevice, error) // boundingbox
 	GetIOT(id int64) (*models.IOTDevice, error)
 	GetIOTByAddress(addr models.EthAddress) (*models.IOTDevice, error)
@@ -16,5 +34,5 @@ type IIot interface {
 	// GetRawMetric(metricId string) (*models.Metric, error)
 
 	CreateMint(mint *models.MintSign) error
-	GetMintSigns(iotAddr string, fromNonce int) ([]*models.MintSign, error)
+	GetMintSigns(*RIotGetMintSignList) ([]*models.MintSign, error)
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
+	"github.com/Dcarbon/iott-cloud/internal/rss"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -18,7 +19,7 @@ type iotRepo struct {
 
 func NewIOTRepo(dMinter *esign.ERC712,
 ) (domain.IIot, error) {
-	var db = getSingletonDB()
+	var db = rss.GetDB()
 	err := db.AutoMigrate(
 		&models.IOTDevice{},
 		&models.MintSign{},
@@ -35,27 +36,37 @@ func NewIOTRepo(dMinter *esign.ERC712,
 	return ip, nil
 }
 
-func (ip *iotRepo) Create(iot *models.IOTDevice) error {
-	iot.ID = 0
-	// iot.Address = strings.ToLower(iot.Address)
+func (ip *iotRepo) Create(req *domain.RIotCreate) (*models.IOTDevice, error) {
+	var iot = &models.IOTDevice{
+		ID:       0,
+		Project:  req.Project,
+		Address:  req.Address,
+		Type:     req.Type,
+		Status:   models.DeviceStatusRegister,
+		Position: req.Position,
+	}
+
 	var err = ip.tblIOT().Create(iot).Error
 	if nil != err {
-		return models.ParsePostgresError("IOT", err)
+		return nil, models.ParsePostgresError("IOT", err)
 	}
-	return nil
+	return iot, nil
 }
 
-func (ip *iotRepo) ChangeStatus(iotAddr string, status models.IOTStatus,
+func (ip *iotRepo) ChangeStatus(req *domain.RIotChangeStatus,
 ) (*models.IOTDevice, error) {
 	var iot = &models.IOTDevice{}
 	var err = ip.tblIOT().
 		Model(iot).
 		Clauses(clause.Returning{}).
-		Where("address = ?", strings.ToLower(iotAddr)).
-		Update("status", status).
+		Where("id = ?", req.IotId).
+		Update("status", req.Status).
 		Error
+	if nil != err {
+		return nil, models.ParsePostgresError("IOT", err)
+	}
 
-	return iot, models.ParsePostgresError("IOT", err)
+	return iot, err
 }
 
 func (ip *iotRepo) GetIOT(id int64) (*models.IOTDevice, error) {
@@ -64,7 +75,6 @@ func (ip *iotRepo) GetIOT(id int64) (*models.IOTDevice, error) {
 	if nil != err {
 		return iot, models.ParsePostgresError("IOT", err)
 	}
-
 	return iot, nil
 }
 
@@ -90,14 +100,14 @@ func (ip *iotRepo) GetByBB(min, max *models.Point4326,
 	return iots, models.ParsePostgresError("IOT", err)
 }
 
-func (ip *iotRepo) GetIOTStatus(iotAddr string) models.IOTStatus {
+func (ip *iotRepo) GetIOTStatus(iotAddr string) models.DeviceStatus {
 	var device = &models.IOTDevice{}
 	var err = ip.tblIOT().
 		Select("status").
 		Where("address = ?", strings.ToLower(iotAddr)).
 		First(&device).Error
 	if nil != err {
-		device.Status = models.IOTStatusReject
+		device.Status = models.DeviceStatusReject
 	}
 	return device.Status
 }
@@ -106,7 +116,16 @@ func (ip *iotRepo) CreateMint(mint *models.MintSign,
 ) error {
 	mint.IOT = strings.ToLower(mint.IOT)
 
-	err := mint.Verify(ip.dMinter)
+	var iot, err = ip.GetIOTByAddress(models.EthAddress(mint.IOT))
+	if nil != err {
+		return err
+	}
+
+	if iot.Status < models.DeviceStatusRegister {
+		return models.NewError(models.ECodeIOTNotAllowed, "IOT is not allow")
+	}
+
+	err = mint.Verify(ip.dMinter)
 	if nil != err {
 		return err
 	}
@@ -128,10 +147,7 @@ func (ip *iotRepo) CreateMint(mint *models.MintSign,
 				"Nonce is not valid",
 			)
 		}
-		err = models.ParsePostgresError(
-			"",
-			ip.tblSign().Create(mint).Error,
-		)
+		err = models.ParsePostgresError("", ip.tblSign().Create(mint).Error)
 	} else if latest[0].Nonce == mint.Nonce {
 		err = ip.tblSign().
 			Where("id = ?", latest[0].ID).
@@ -145,29 +161,32 @@ func (ip *iotRepo) CreateMint(mint *models.MintSign,
 			}).Error
 		err = models.ParsePostgresError("", err)
 	} else if latest[0].Nonce+1 == mint.Nonce {
-		err = models.ParsePostgresError(
-			"",
-			ip.tblSign().Create(mint).Error,
-		)
+		err = models.ParsePostgresError("", ip.tblSign().Create(mint).Error)
 	} else {
-		err = models.NewError(models.ECodeIOTInvalidNonce, "")
+		err = models.NewError(models.ECodeIOTInvalidNonce, "Invalid nonce")
 	}
 
 	return err
 }
 
-func (ip *iotRepo) GetMintSigns(iotAddr string, fromNonce int,
+func (ip *iotRepo) GetMintSigns(req *domain.RIotGetMintSignList,
 ) ([]*models.MintSign, error) {
-	iotAddr = strings.ToLower(iotAddr)
+	var iot, err = ip.GetIOT(req.IotId)
+	if nil != err {
+		return nil, err
+	}
 
 	var signeds = make([]*models.MintSign, 0)
-	var err = ip.tblSign().
-		Where("iot = ? AND nonce >= ?", iotAddr, fromNonce).
+	err = ip.tblSign().
+		Where(
+			"created_at > ? AND created_at < ? AND  iot = ?",
+			time.Unix(req.From, 0), time.Unix(req.To, 0), iot.Address,
+		).
 		Find(&signeds).
 		Order("id asc").
 		Error
 	if nil != err {
-		return nil, models.ParsePostgresError("", err)
+		return nil, models.ParsePostgresError("Get mint sign", err)
 	}
 	return signeds, nil
 }

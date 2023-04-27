@@ -1,9 +1,10 @@
 package models
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
 	"time"
-
-	"github.com/Dcarbon/go-shared/libs/dbutils"
 )
 
 type ProjectStatus int
@@ -18,14 +19,15 @@ const (
 )
 
 type Project struct {
-	ID        int64                 `json:"id" gorm:"primaryKey"`                        //
-	Owner     EthAddress            `json:"owner" gorm:"index"`                          // ETH address
-	Pos       *Point4326            `json:"pos" gorm:"index;type:geometry(POINT, 4326)"` //
-	Status    ProjectStatus         `json:"status"`                                      //
-	Descs     []*ProjectDescription `json:"descs" gorm:"foreignKey:ProjectID"`           //
-	Specs     *ProjectSpec          `json:"specs" gorm:"foreignKey:ProjectID"`           //
-	CreatedAt time.Time             `json:"createdAt"`                                   //
-	UpdatedAt time.Time             `json:"updatedAt"`                                   //
+	ID        int64                 `json:"id" gorm:"primaryKey"`                         //
+	Owner     EthAddress            `json:"owner" gorm:"index"`                           // ETH address
+	Status    ProjectStatus         `json:"status"`                                       //
+	Location  *Point4326            `json:"location" gorm:"type:geometry(POINT, 4326)"`   //
+	Specs     *ProjectSpec          `json:"specs,omitempty" gorm:"foreignKey:ProjectID"`  //
+	Descs     []*ProjectDescription `json:"descs,omitempty" gorm:"foreignKey:ProjectID"`  //
+	Images    []*ProjectImage       `json:"images,omitempty" gorm:"foreignKey:ProjectID"` //
+	CreatedAt time.Time             `json:"createdAt"`                                    //
+	UpdatedAt time.Time             `json:"updatedAt"`                                    //
 }
 
 func (*Project) TableName() string { return TableNameProject }
@@ -43,11 +45,42 @@ type ProjectDescription struct {
 func (*ProjectDescription) TableName() string { return TableNameProjectDesc }
 
 type ProjectSpec struct {
-	ID        int64             `json:"id" gorm:"primaryKey"`
-	ProjectID int64             `json:"projectId" gorm:"unique"`
-	Specs     dbutils.MapSFloat `json:"specs" gorm:"type:json"`
-	CreatedAt time.Time         `json:"createdAt"`
-	UpdatedAt time.Time         `json:"updatedAt"`
+	ID        int64     `json:"id" gorm:"primaryKey"`
+	ProjectID int64     `json:"projectId" gorm:"unique"`
+	Specs     MapSFloat `json:"specs" gorm:"type:json"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 func (*ProjectSpec) TableName() string { return TableNameProjectSpec }
+
+type ProjectImage struct {
+	ID        int64     `json:"id"`        //
+	ProjectID int64     `json:"projectId"` //
+	Image     string    `json:"image"`     // Image path
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+func (*ProjectImage) TableName() string { return TableNameProjectImage }
+
+type MapSFloat map[string]float64
+
+func (m *MapSFloat) Scan(value interface{}) error {
+	if nil == m {
+		m = new(MapSFloat)
+	}
+	switch vt := value.(type) {
+	case string:
+		return json.Unmarshal([]byte(vt), m)
+	case []byte:
+		return json.Unmarshal(vt, m)
+	}
+	return errors.New("scan value type for MapSFloat invalid")
+}
+
+func (m MapSFloat) Value() (driver.Value, error) {
+	if nil == m {
+		return nil, nil
+	}
+	return json.Marshal(m)
+}

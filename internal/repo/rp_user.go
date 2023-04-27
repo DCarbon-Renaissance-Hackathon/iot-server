@@ -1,10 +1,10 @@
 package repo
 
 import (
-	"github.com/Dcarbon/go-shared/libs/dbutils"
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
+	"github.com/Dcarbon/iott-cloud/internal/rss"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -14,12 +14,9 @@ type userRepo struct {
 	db *gorm.DB
 }
 
-func NewUserRepo(dbUrl string) (domain.IUser, error) {
-	var db, err = dbutils.NewDB(dbUrl)
-	if nil != err {
-		return nil, err
-	}
-	err = db.AutoMigrate(
+func NewUserRepo() (domain.IUser, error) {
+	var db = rss.GetDB()
+	err := db.AutoMigrate(
 		&models.User{},
 	)
 	if nil != err {

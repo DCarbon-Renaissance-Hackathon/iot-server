@@ -3,7 +3,6 @@ package repo
 import (
 	"testing"
 
-	"github.com/Dcarbon/go-shared/libs/dbutils"
 	"github.com/Dcarbon/go-shared/libs/utils"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
@@ -12,24 +11,25 @@ import (
 var pRepoTest domain.IProject
 
 func init() {
-	err := InitRepo(dbUrlTest)
-	utils.PanicError("", err)
+	var err error
+
+	// err := rss.InitResource(dbUrlTest, redisUrl)
+	// utils.PanicError("", err)
 
 	pRepoTest, err = NewProjectRepo()
 	utils.PanicError("", err)
 }
 
 func TestProjectCreate(t *testing.T) {
-	var p = &models.Project{
-		ID:    0,
+	var p = &domain.RProjectCreate{
 		Owner: adminAddr,
-		Pos: &models.Point4326{
+		Location: &models.Point4326{
 			Lat: 21.015462,
 			Lng: 105.804904,
 		},
-		Status: models.ProjectStatusRegister,
+		// Status: models.ProjectStatusRegister,
 	}
-	err := pRepoTest.Create(p)
+	_, err := pRepoTest.Create(p)
 	utils.PanicError("", err)
 	utils.Dump("Project created: ", p)
 }
@@ -49,7 +49,7 @@ func TestProjectUpdateDesc(t *testing.T) {
 func TestProjectUpdateSpec(t *testing.T) {
 	var spec = &models.ProjectSpec{
 		ProjectID: 1,
-		Specs: dbutils.MapSFloat{
+		Specs: models.MapSFloat{
 			"s": 51.0,
 		},
 	}
@@ -59,7 +59,7 @@ func TestProjectUpdateSpec(t *testing.T) {
 }
 
 func TestProjectGetByID(t *testing.T) {
-	var rs, err = pRepoTest.GetById(1, "", false)
+	var rs, err = pRepoTest.GetById(1, "")
 	utils.PanicError("TestProjectGetByID", err)
 	utils.Dump("TestProjectGetByID", rs)
 }

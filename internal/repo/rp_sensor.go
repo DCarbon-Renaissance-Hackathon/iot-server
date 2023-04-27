@@ -1,26 +1,31 @@
 package repo
 
 import (
+	"fmt"
+	"log"
 	"time"
 
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
+	"github.com/Dcarbon/iott-cloud/internal/rss"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 type SensorRepo struct {
-	db *gorm.DB
+	db      *gorm.DB
+	opCache domain.IOperator
 }
 
 func NewSensorRepo() (*SensorRepo, error) {
-	var db = getSingletonDB()
+	var db = rss.GetDB()
 	err := db.AutoMigrate(
 		&models.Sensor{},
+		&models.SmSignature{},
 		&models.SmFloat{},
 		&models.SmGPS{},
-		&models.SmSignature{},
+		// &models.Sm{},
 	)
 	if nil != err {
 		return nil, err
@@ -33,6 +38,10 @@ func NewSensorRepo() (*SensorRepo, error) {
 	return impl, nil
 }
 
+func (impl *SensorRepo) SetOperatorCache(op domain.IOperator) {
+	impl.opCache = op
+}
+
 func (impl *SensorRepo) CreateSensor(req *domain.RCreateSensor,
 ) (*models.Sensor, error) {
 	var sensor = &models.Sensor{
@@ -40,11 +49,11 @@ func (impl *SensorRepo) CreateSensor(req *domain.RCreateSensor,
 		IotID:     req.IotID,
 		Address:   &req.Address,
 		Type:      req.Type,
-		Status:    models.SensorStatusRegister,
+		Status:    models.DeviceStatusRegister,
 		CreatedAt: time.Now(),
 	}
 
-	var err = impl.tblSensor().Create(sensor).Error
+	var err = impl.tblSensors().Create(sensor).Error
 	if nil != err {
 		return nil, models.ParsePostgresError("Create sensor", err)
 	}
@@ -55,7 +64,7 @@ func (impl *SensorRepo) CreateSensor(req *domain.RCreateSensor,
 func (impl *SensorRepo) ChangeSensorStatus(req *domain.RChangeSensorStatus,
 ) (*models.Sensor, error) {
 	var sensor = &models.Sensor{}
-	var err = impl.tblSensor().
+	var err = impl.tblSensors().
 		Model(sensor).
 		Clauses(clause.Returning{}).
 		Where("id = ?", req.ID).
@@ -73,7 +82,7 @@ func (impl *SensorRepo) ChangeSensorStatus(req *domain.RChangeSensorStatus,
 func (impl *SensorRepo) GetSensor(req *domain.SensorID,
 ) (*models.Sensor, error) {
 	var sensor = &models.Sensor{}
-	var query = impl.tblSensor()
+	var query = impl.tblSensors()
 	if req.ID != 0 {
 		query = query.Where("id = ?", req.ID)
 	} else {
@@ -86,10 +95,26 @@ func (impl *SensorRepo) GetSensor(req *domain.SensorID,
 	return sensor, nil
 }
 
+func (impl *SensorRepo) GetSensorType(req *domain.SensorID,
+) (models.SensorType, error) {
+	var sensor = &models.Sensor{}
+	var query = impl.tblSensors()
+	if req.ID != 0 {
+		query = query.Where("id = ?", req.ID)
+	} else {
+		query = query.Where("address = ?", req.Address.String())
+	}
+	var err = query.Select("id, type").First(sensor).Error
+	if nil != err {
+		return 0, models.ParsePostgresError("Get sensor", err)
+	}
+	return sensor.Type, nil
+}
+
 func (impl *SensorRepo) GetSensors(req *domain.RGetSensors,
 ) ([]*models.Sensor, error) {
 	var sensors = make([]*models.Sensor, 0, req.Limit)
-	var query = impl.tblSensor().Offset(req.Skip)
+	var query = impl.tblSensors().Offset(req.Skip)
 	if req.Limit > 0 {
 		query = query.Limit(req.Limit)
 	}
@@ -107,6 +132,7 @@ func (impl *SensorRepo) GetSensors(req *domain.RGetSensors,
 
 func (impl *SensorRepo) CreateSM(req *domain.RCreateSM,
 ) (*models.SmSignature, error) {
+	log.Println("Create sm payload: ", req)
 	sensor, err := impl.GetSensor(&domain.SensorID{Address: req.SensorAddress})
 	if nil != err {
 		return nil, err
@@ -168,12 +194,75 @@ func (impl *SensorRepo) CreateSMFromIot(req *domain.RCreateSMFromIOT,
 		return nil, err
 	}
 
+	if impl.opCache != nil {
+		err = impl.opCache.SetStatus(&domain.ROpSetStatus{
+			Id:     sensor.IotID,
+			Status: models.OpStatusActived,
+		})
+		if nil != err {
+			log.Println("Save iot status error: ", err)
+		}
+
+		_, err = impl.opCache.ChangeMetrics(&domain.RChangeMetric{
+			IotId:    sensor.IotID,
+			SensorId: sensor.ID,
+			Metric:   smx.Indicator,
+		}, sensor.Type)
+		if nil != err {
+			log.Println("Save sensor metric cache error: ", err)
+		}
+	}
+
 	return signed, nil
 }
 
+func (impl *SensorRepo) GetMetrics(req *domain.RGetSM) ([]*domain.Metric, error) {
+	var rs = make([]*domain.Metric, 0)
+	var query = impl.db.Table(models.TableNameSm+" as tblSM").
+		Select("tblSM.id, tblSM.indicator, tblSM.created_at, tblSign.iot_id, tblSign.sensor_id ").
+		Joins(fmt.Sprintf("JOIN %s as tblSign ON tblSign.id = tblSM.sign_id", models.TableNameSmSignature)).
+		Where("iot_id = ?", req.IotId).
+		Order("tblSM.created_at asc")
+	if req.From > 0 {
+		query = query.Where("tblSM.created_at > ?", time.Unix(req.From, 0))
+	}
+
+	if req.To > 0 {
+		query = query.Where("tblSM.created_at < ?", time.Unix(req.To, 0))
+	}
+
+	var err = query.Find(&rs).Error
+	if nil != err {
+		return nil, models.ParsePostgresError("Get metrics", err)
+	}
+
+	return rs, nil
+}
+
+// func (impl *SensorRepo) insertMetric(smx *models.SMExtract, signed *models.SmSignature, stype models.SensorType,
+// ) error {
+// 	var data = &models.Sm{
+// 		ID:        uuid.NewV4().String(),
+// 		SignID:    signed.ID,
+// 		Indicator: &smx.Indicator,
+// 		CreatedAt: time.Unix(smx.To, 0),
+// 	}
+// 	e1 := impl.tblMetrics().Transaction(func(dbTx *gorm.DB) error {
+// 		err := dbTx.Table(models.TableNameSm).Create(data).Error
+// 		if nil != err {
+// 			return models.ParsePostgresError("Save sensor metric data", err)
+// 		}
+// 		err = dbTx.Table(models.TableNameSmSignature).Create(signed).Error
+// 		if nil != err {
+// 			return models.ParsePostgresError("Save sensor metric signature", err)
+// 		}
+// 		return nil
+// 	})
+// 	return e1
+// }
+
 func (impl *SensorRepo) insertMetric(smx *models.SMExtract, signed *models.SmSignature, stype models.SensorType,
 ) error {
-
 	switch stype {
 	case models.SensorTypePower:
 		return impl.insertMetricFloat(smx, signed)
@@ -181,30 +270,8 @@ func (impl *SensorRepo) insertMetric(smx *models.SMExtract, signed *models.SmSig
 		return impl.insertMetricFloat(smx, signed)
 	case models.SensorTypeGPS:
 		return impl.insertMetricGPS(smx, signed)
-
 	}
 	return models.NewError(models.ECodeSensorInvalidType, "Sensor type is not supported")
-	// sm := &models.SM{
-	// 	ID:     uuid.NewV4().String(),
-	// 	SignID: signed.ID,
-	// 	// Indicator: smx.Indicator,
-	// 	CreatedAt: time.Unix(smx.To, 0),
-	// }
-
-	// e1 := impl.tblMetrics().Transaction(func(dbTx *gorm.DB) error {
-	// 	err := dbTx.Table(models.TableNameSM).Create(sm).Error
-	// 	if nil != err {
-	// 		return models.ParsePostgresError("", err)
-	// 	}
-
-	// 	err = dbTx.Table(models.TableNameSMSignature).Create(signed).Error
-	// 	if nil != err {
-	// 		return models.ParsePostgresError("", err)
-	// 	}
-	// 	return nil
-	// })
-
-	// return sm, e1
 }
 
 func (impl *SensorRepo) insertMetricFloat(smx *models.SMExtract, signed *models.SmSignature,
@@ -221,20 +288,17 @@ func (impl *SensorRepo) insertMetricFloat(smx *models.SMExtract, signed *models.
 		if nil != err {
 			return models.ParsePostgresError("", err)
 		}
-
 		err = dbTx.Table(models.TableNameSmSignature).Create(signed).Error
 		if nil != err {
 			return models.ParsePostgresError("", err)
 		}
 		return nil
 	})
-
 	return e1
 }
 
 func (impl *SensorRepo) insertMetricGPS(smx *models.SMExtract, signed *models.SmSignature,
 ) error {
-
 	sm := &models.SmGPS{
 		ID:     uuid.NewV4().String(),
 		SignID: signed.ID,
@@ -244,7 +308,6 @@ func (impl *SensorRepo) insertMetricGPS(smx *models.SMExtract, signed *models.Sm
 		},
 		CreatedAt: time.Unix(smx.To, 0),
 	}
-
 	e1 := impl.tblGPSMetrics().Transaction(func(dbTx *gorm.DB) error {
 		err := dbTx.Table(models.TableNameSmGPS).Create(sm).Error
 		if nil != err {
@@ -257,29 +320,16 @@ func (impl *SensorRepo) insertMetricGPS(smx *models.SMExtract, signed *models.Sm
 		}
 		return nil
 	})
-
 	return e1
 }
 
-func (impl *SensorRepo) GetMetrics(req *domain.RGetSM) ([]*models.SmFloat, error) {
-	var rs = make([]*models.SmFloat, 0)
-	var query = impl.tblFloatMetrics().Order("created_at asc")
-	if req.From > 0 {
-		query = query.Where("created_at > ?", time.Unix(req.From, 0))
-	}
-	if req.To > 0 {
-		query = query.Where("created_at < ?", time.Unix(req.To, 0))
-	}
-	var err = query.Find(&rs).Error
-	if nil != err {
-		return nil, models.ParsePostgresError("Get metrics", err)
-	}
-	return rs, nil
-}
-
-func (impl *SensorRepo) tblSensor() *gorm.DB {
+func (impl *SensorRepo) tblSensors() *gorm.DB {
 	return impl.db.Table(models.TableNameSensors)
 }
+
+// func (impl *SensorRepo) tblMetrics() *gorm.DB {
+// 	return impl.db.Table(models.TableNameSm)
+// }
 
 func (impl *SensorRepo) tblFloatMetrics() *gorm.DB {
 	return impl.db.Table(models.TableNameSmFloat)

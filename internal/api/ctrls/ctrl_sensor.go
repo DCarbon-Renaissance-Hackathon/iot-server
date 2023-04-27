@@ -1,6 +1,7 @@
 package ctrls
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -27,13 +28,17 @@ func NewSensorCtrl(iotRepo domain.IIot) (*SensorCtrl, error) {
 	return ctrl, nil
 }
 
+func (ctrl *SensorCtrl) GetSensorRepo() domain.ISensor {
+	return ctrl.sensorRepo
+}
+
 // Create godoc
 // @Summary      Create
 // @Description  create sensor
 // @Tags         Sensors
 // @Accept       json
 // @Produce      json
-// @Param        sensor				body		domain.RCreateSensor	true	"Sensor information"
+// @Param        sensor				body		RCreateSensor	true	"Sensor information"
 // @Param        Authorization		header		string					true	"Authorization token (`Bearer $token`)"
 // @Success      200				{object}	models.Sensor
 // @Failure      400				{object}	models.Error
@@ -181,13 +186,20 @@ func (ctrl *SensorCtrl) CreateSm(r *gin.Context) {
 	var err = r.Bind(payload)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest(err.Error()))
+		return
+	}
+
+	if payload.SensorAddress == "" || payload.Signed == "" || payload.Data == "" {
+		r.JSON(400, models.ErrBadRequest("Request missing param. Please check again"))
+		return
+	}
+
+	sensor, err := ctrl.sensorRepo.CreateSM(payload)
+	if nil != err {
+		log.Println("Create sm error: ", err)
+		r.JSON(500, err)
 	} else {
-		sensor, err := ctrl.sensorRepo.CreateSM(payload)
-		if nil != err {
-			r.JSON(500, err)
-		} else {
-			r.JSON(http.StatusOK, sensor)
-		}
+		r.JSON(http.StatusOK, sensor)
 	}
 }
 
@@ -238,7 +250,7 @@ func (ctrl *SensorCtrl) CreateSMByIOT(r *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        payload				body		domain.RGetSM	true	"Payload"
-// @Success      200					{object}	models.Sensor
+// @Success      200					{object}	SensorMetrics
 // @Failure      400					{object}	models.Error
 // @Failure      404					{object}	models.Error
 // @Failure      500					{object}	models.Error
@@ -249,15 +261,19 @@ func (ctrl *SensorCtrl) GetMetrics(r *gin.Context) {
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest(err.Error()))
 	} else {
-		sensor, err := ctrl.sensorRepo.GetMetrics(payload)
+		metrics, err := ctrl.sensorRepo.GetMetrics(payload)
 		if nil != err {
 			r.JSON(500, err)
 		} else {
-			r.JSON(http.StatusOK, sensor)
+			r.JSON(http.StatusOK, &SensorMetrics{Metrics: metrics})
 		}
 	}
 }
 
 type Sensors struct {
 	Sensors []*models.Sensor `json:"sensors"`
+}
+
+type SensorMetrics struct {
+	Metrics []*domain.Metric `json:"metrics"`
 }

@@ -12,7 +12,7 @@ type ProposalStatus int8
 type Proposal struct {
 	ID         int64           `json:"id" gorm:"primary_key"`
 	Type       int32           `json:"type"`
-	Status     ProposalStatus  `json:""`
+	Status     ProposalStatus  `json:"status"`
 	Url        string          `json:"url"`
 	Title      string          `json:"title"`
 	Summary    string          `json:"summary"`
