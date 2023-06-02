@@ -20,7 +20,7 @@ func NewProjectRepo() (domain.IProject, error) {
 		&models.Project{},
 		&models.ProjectImage{},
 		&models.ProjectDescription{},
-		&models.ProjectSpec{},
+		&models.ProjectSpecs{},
 	)
 	if nil != err {
 		return nil, err
@@ -34,14 +34,8 @@ func NewProjectRepo() (domain.IProject, error) {
 
 func (pRepo *projectRepo) Create(req *domain.RProjectCreate,
 ) (*models.Project, error) {
-	var project = &models.Project{
-		ID:        0,
-		Status:    models.ProjectStatusRegister,
-		Owner:     req.Owner,
-		Location:  req.Location,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
+
+	var project = req.ToProject()
 	var e1 = pRepo.tblProject().Transaction(func(dbTx *gorm.DB) error {
 		err := dbTx.Table(models.TableNameProject).Create(project).Error
 		if nil != err {
@@ -58,8 +52,10 @@ func (pRepo *projectRepo) Create(req *domain.RProjectCreate,
 	return project, nil
 }
 
-func (pRepo *projectRepo) UpdateDesc(req *models.ProjectDescription,
+func (pRepo *projectRepo) UpdateDesc(req *domain.RProjectUpdateDesc,
 ) (*models.ProjectDescription, error) {
+	var desc = req.ToProjectDesc()
+
 	var err = pRepo.tblProjectDesc().
 		Clauses(
 			clause.OnConflict{
@@ -68,26 +64,28 @@ func (pRepo *projectRepo) UpdateDesc(req *models.ProjectDescription,
 			},
 			clause.Insert{},
 		).
-		Create(req).Error
+		Create(desc).Error
 	if nil != err {
 		return nil, models.ParsePostgresError("Update project desc", err)
 	}
-	return req, nil
+	return desc, nil
 }
 
-func (pRepo *projectRepo) UpdateSpec(req *models.ProjectSpec,
-) (*models.ProjectSpec, error) {
+func (pRepo *projectRepo) UpdateSpecs(req *domain.RProjectUpdateSpecs,
+) (*models.ProjectSpecs, error) {
+	var spec = req.ToProjectSpecs()
+
 	var err = pRepo.tblProjectSpec().
 		Clauses(
 			clause.OnConflict{
 				Columns:   []clause.Column{{Name: "project_id"}},
 				DoUpdates: clause.AssignmentColumns([]string{"specs", "updated_at"}),
 			},
-		).Create(req).Error
+		).Create(spec).Error
 	if nil != err {
 		return nil, models.ParsePostgresError("Update project desc", err)
 	}
-	return req, nil
+	return spec, nil
 }
 
 func (pRepo *projectRepo) GetById(id int64, lang string) (*models.Project, error) {
@@ -194,7 +192,7 @@ func (pRepo *projectRepo) tblProjectDesc() *gorm.DB {
 }
 
 func (pRepo *projectRepo) tblProjectSpec() *gorm.DB {
-	return pRepo.db.Table(models.TableNameProjectSpec)
+	return pRepo.db.Table(models.TableNameProjectSpecs)
 }
 
 func (pRepo *projectRepo) tblImage() *gorm.DB {

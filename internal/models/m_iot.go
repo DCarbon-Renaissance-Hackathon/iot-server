@@ -27,7 +27,7 @@ type IOTDevice struct {
 	Type     IOTType      `json:"type" `
 	Status   DeviceStatus `json:"status"`
 	Position Point4326    `json:"position" gorm:"type:geometry(POINT, 4326)"`
-}
+} // @name IOTDevice
 
 func (*IOTDevice) TableName() string { return TableNameIOT }
 

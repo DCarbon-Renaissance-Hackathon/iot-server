@@ -13,11 +13,13 @@ type SensorID struct {
 }
 
 type Metric struct {
-	ID        string            `json:"id"`
-	IotId     int64             `json:"iotId"`
-	SensorId  int64             `json:"sensorId"`
-	Indicator *models.AllMetric `json:"indicator"`
-	CreatedAt time.Time         `json:"createdAt"`
+	ID         string            `json:"id"`
+	IotId      int64             `json:"iotId"`
+	SensorId   int64             `json:"sensorId"`
+	SensorType models.SensorType `json:"sensorType"`
+	Indicator  *models.AllMetric `json:"indicator"`
+	Data       string            `json:"data"`
+	CreatedAt  time.Time         `json:"createdAt"`
 }
 
 type RCreateSensor struct {
@@ -57,9 +59,12 @@ type RCreateSMFromIOT struct {
 }
 
 type RGetSM struct {
-	From  int64 `json:"from"` // Timestamp start
-	To    int64 `json:"to"`   // Timestamp end
-	IotId int64 `json:"iotId"`
+	From     int64 `json:"from" form:"from" binding:"required"`          // Timestamp start
+	To       int64 `json:"to" form:"to" binding:"required"`              // Timestamp end
+	IotId    int64 `json:"iotId" form:"iotId" binding:"required"`        //
+	Skip     int64 `json:"skip" form:"skip"`                             //
+	Limit    int64 `json:"limit" form:"limit" binding:"required,max=50"` //
+	SensorId int64 `json:"sensorId" form:"sensorId" `                    //
 }
 
 type ISensor interface {

@@ -37,14 +37,14 @@ func NewUserCtrl(jwtKey string, tokenDuration int64) (*UserCtrl, error) {
 // @Tags         User
 // @Accept       json
 // @Produce      json
-// @Param        payload	body		rLogin  true  "Login request"
-// @Success      200		{object}	rsLogin
-// @Failure      400		{object}	models.Error
-// @Failure      404  		{object}	models.Error
-// @Failure      500  		{object}	models.Error
+// @Param        payload	body		RLogin  true  "Login request"
+// @Success      200		{object}	RsLogin
+// @Failure      400		{object}	Error
+// @Failure      404  		{object}	Error
+// @Failure      500  		{object}	Error
 // @Router       /users/login [post]
 func (ctrl *UserCtrl) Login(r *gin.Context) {
-	var payload = &rLogin{}
+	var payload = &domain.RLogin{}
 	var err = r.BindJSON(payload)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest("Body must be json"))
@@ -64,7 +64,7 @@ func (ctrl *UserCtrl) Login(r *gin.Context) {
 		return
 	}
 
-	r.JSON(200, &rsLogin{
+	r.JSON(200, &RsLogin{
 		Token: token,
 		User:  user,
 	})
@@ -78,9 +78,9 @@ func (ctrl *UserCtrl) Login(r *gin.Context) {
 // @Produce      json
 // @Param        user   	query      	number  true  "User information"
 // @Success      200		{object}	models.User
-// @Failure      400		{object}	models.Error
-// @Failure      404  		{object}	models.Error
-// @Failure      500  		{object}	models.Error
+// @Failure      400		{object}	Error
+// @Failure      404  		{object}	Error
+// @Failure      500  		{object}	Error
 // @Router       /users/ 	[put]
 func (ctrl *UserCtrl) Update(r *gin.Context) {
 	var current, err = mids.GetAuth(r.Request.Context())
@@ -106,13 +106,7 @@ func (ctrl *UserCtrl) Update(r *gin.Context) {
 
 }
 
-type rLogin struct {
-	Address   models.EthAddress `json:"address"`
-	Signature string            `json:"signature"`
-	Now       int64             `json:"now"`
-}
-
-type rsLogin struct {
+type RsLogin struct {
 	Token string       `json:"token"`
 	User  *models.User `json:"user"`
-}
+} // @name RsLogin

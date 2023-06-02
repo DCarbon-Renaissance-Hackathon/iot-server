@@ -21,7 +21,7 @@ var testDomainMinter = esign.MustNewERC712(
 		Name:              "CARBON",
 		Version:           "1",
 		ChainId:           1,
-		VerifyingContract: "0x9C399C33a393334D28e8bA4FFF45296f50F82d1f",
+		VerifyingContract: "0x7BDDCb9699a3823b8B27158BEBaBDE6431152a85",
 	},
 	esign.MustNewTypedDataField(
 		"Mint",
@@ -45,7 +45,7 @@ func TestIOTCreate(t *testing.T) {
 		Project: 1,
 		Type:    models.IOTTypeBurnMethane,
 		Address: "0x1064F6f232bdD6E38a248C0C3a1456b023f05e3B",
-		Position: models.Point4326{
+		Position: &models.Point4326{
 			Lat: 21.015462,
 			Lng: 105.704904,
 		},
@@ -56,10 +56,11 @@ func TestIOTCreate(t *testing.T) {
 }
 
 func TestIOTChangeStatus(t *testing.T) {
+	var status = models.DeviceStatusSuccess
 	var data, err = iotRepoTest.ChangeStatus(
 		&domain.RIotChangeStatus{
 			IotId:  1,
-			Status: models.DeviceStatusSuccess,
+			Status: &status,
 		},
 	)
 	utils.PanicError("Update iot status ", err)

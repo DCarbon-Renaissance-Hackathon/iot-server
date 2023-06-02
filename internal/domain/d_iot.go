@@ -6,18 +6,18 @@ type RIotCreate struct {
 	Project  int64             `json:"project" binding:"required"`
 	Address  models.EthAddress `json:"address" binding:"required"`
 	Type     models.IOTType    `json:"type"  binding:"required"`
-	Position models.Point4326  `json:"position" binding:"required"`
+	Position *models.Point4326 `json:"position" binding:"required"`
 } //@name RIotCreate
 
 type RIotChangeStatus struct {
-	IotId  int64               `json:"iotId" binding:"required"`
-	Status models.DeviceStatus `json:"status" binding:"required"`
+	IotId  int64                `json:"iotId" form:"iotId" binding:"required"`
+	Status *models.DeviceStatus `json:"status" form:"status" binding:"required"`
 } //@name RIotChangeStatus
 
 type RIotGetMintSignList struct {
-	From  int64 `json:"from"  binding:"required"`
-	To    int64 `json:"to"  binding:"required"`
-	IotId int64 `json:"iotId"  binding:"required"`
+	From  int64 `json:"from" form:"from"  binding:"required"`
+	To    int64 `json:"to" form:"to"  binding:"required"`
+	IotId int64 `json:"iotId" form:"iotId"  binding:"required"`
 } //@name RIotGetMintSignList
 
 type IIot interface {

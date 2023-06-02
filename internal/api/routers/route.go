@@ -55,10 +55,10 @@ func NewRouter(config Config,
 
 	iotCtrl, err := ctrls.NewIotCtrl(
 		&esign.TypedDataDomain{
+			Name:              "CARBON",
 			ChainId:           config.ChainID,
 			Version:           config.CarbonVersion,
 			VerifyingContract: config.CarbonAddress,
-			Name:              "CARBON",
 		},
 	)
 	if nil != err {
@@ -145,6 +145,8 @@ func NewRouter(config Config,
 
 		sensorRoute.POST("/sm/create", sensorCtrl.CreateSm)
 		sensorRoute.POST("/sm/create-by-iot", sensorCtrl.CreateSMByIOT)
+
+		sensorRoute.GET("/sm", sensorCtrl.GetMetrics)
 	}
 
 	var opRoute = v1.Group("/op")
@@ -162,9 +164,22 @@ func NewRouter(config Config,
 		)
 		projectRoute.POST(
 			"/add-image",
-			mids.NewA2(config.JwtKey, "project-create").HandlerFunc,
+			mids.NewA2(config.JwtKey, "").HandlerFunc,
 			projectCtrl.AddImage,
 		)
+
+		projectRoute.POST(
+			"/update-desc",
+			mids.NewA2(config.JwtKey, "").HandlerFunc,
+			projectCtrl.UpdateDesc,
+		)
+
+		projectRoute.POST(
+			"/update-specs",
+			mids.NewA2(config.JwtKey, "").HandlerFunc,
+			projectCtrl.UpdateSpecs,
+		)
+
 		projectRoute.GET("/", projectCtrl.GetList)
 		projectRoute.GET("/:projectId", projectCtrl.GetByID)
 

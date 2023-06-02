@@ -10,15 +10,15 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-const AddrStr = "0xCC719739eD48B0258456F104DA7ba83Ba6881C35"
-const PrvStr = "5763b65df1b1860bfa8a372ae589f1a67811c3e4a7234d29fc3d68d2c531e547"
+const AddrStr = "0x19Adf96848504a06383b47aAA9BbBC6638E81afD"
+const PrvStr = "0123456789012345678901234567890123456789012345678901234567880001"
 
 var testDomainMinter = esign.MustNewERC712(
 	&esign.TypedDataDomain{
 		Name:              "CARBON",
 		Version:           "1",
-		ChainId:           1,
-		VerifyingContract: "0x9C399C33a393334D28e8bA4FFF45296f50F82d1f",
+		ChainId:           1337,
+		VerifyingContract: "0x7BDDCb9699a3823b8B27158BEBaBDE6431152a85",
 	},
 	esign.MustNewTypedDataField(
 		"Mint",
@@ -32,8 +32,8 @@ var testDomainMinter = esign.MustNewERC712(
 func TestMintSignAndVerify(t *testing.T) {
 	var m = &MintSign{
 		ID:     0,
-		Nonce:  100,
-		Amount: "0xaabbcc",
+		Nonce:  3,
+		Amount: "0xaabbccddee",
 		IOT:    AddrStr,
 	}
 	signed, err := m.Sign(testDomainMinter, PrvStr)
@@ -47,6 +47,7 @@ func TestMintSignAndVerify(t *testing.T) {
 
 	err = m.Verify(testDomainMinter)
 	utils.PanicError("TestMintVerify", err)
+	utils.Dump("Mint sign", m)
 }
 
 func TestFloat(t *testing.T) {
@@ -60,5 +61,19 @@ func TestFloat(t *testing.T) {
 	var d2 = &DefaultMetric{}
 	err = json.Unmarshal(raw, d2)
 	utils.PanicError("", err)
+}
 
+func TestMintVerify(t *testing.T) {
+	var m = &MintSign{
+		ID:     0,
+		Nonce:  3,
+		Amount: "0xaabbccddee",
+		R:      "0xca5979c9d43300870fa6c513e36ba4617179ed1b58ab7fcc8c6a19074b8c09ad",
+		S:      "0x6d2ccc2c822c54c41c15915590c6f107f8c8ed938557e509e01bd121865a8acb",
+		V:      "0x1c",
+		IOT:    "0x19Adf96848504a06383b47aAA9BbBC6638E81afD",
+	}
+
+	err := m.Verify(testDomainMinter)
+	utils.PanicError("TestMintVerify", err)
 }

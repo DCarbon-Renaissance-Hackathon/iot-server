@@ -28,6 +28,6 @@ type Sensor struct {
 	Type      SensorType   `json:"type"`
 	Status    DeviceStatus `json:"status"`
 	CreatedAt time.Time    `json:"createdAt"`
-}
+} // @name Sensor
 
 func (*Sensor) TableName() string { return TableNameSensors }

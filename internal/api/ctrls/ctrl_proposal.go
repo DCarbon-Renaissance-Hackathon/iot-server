@@ -32,11 +32,11 @@ func NewProposalCtrl(dbUrl string) (*ProposalCtrl, error) {
 // @Tags         Proposal
 // @Accept       json
 // @Produce      json
-// @Param        proposal 	body      	models.Proposal  true  "Min longitude"
-// @Success      200		{array}		models.Proposal
-// @Failure      400		{object}	models.Error
-// @Failure      404  		{object}	models.Error
-// @Failure      500  		{object}	models.Error
+// @Param        proposal 	body      	Proposal  true  "Min longitude"
+// @Success      200		{array}		Proposal
+// @Failure      400		{object}	Error
+// @Failure      404  		{object}	Error
+// @Failure      500  		{object}	Error
 // @Router       /proposals/ 	[post]
 func (ctrl *ProposalCtrl) Create(r *gin.Context) {
 	r.JSON(http.StatusNotImplemented, models.ErrNotImplement())
@@ -48,11 +48,11 @@ func (ctrl *ProposalCtrl) Create(r *gin.Context) {
 // @Tags         Proposal
 // @Accept       json
 // @Produce      json
-// @Param        proposal 	body      		models.Proposal  true  "Min longitude"
-// @Success      200		{array}			models.Proposal
-// @Failure      400		{object}		models.Error
-// @Failure      404  		{object}		models.Error
-// @Failure      500  		{object}		models.Error
+// @Param        proposal 	body      		Proposal		true  "Min longitude"
+// @Success      200		{array}			Proposal
+// @Failure      400		{object}		Error
+// @Failure      404  		{object}		Error
+// @Failure      500  		{object}		Error
 // @Router       /proposals/change-status 	[put]
 func (ctrl *ProposalCtrl) ChangeStatus(r *gin.Context) {
 	r.JSON(http.StatusNotImplemented, models.ErrNotImplement())
@@ -66,10 +66,10 @@ func (ctrl *ProposalCtrl) ChangeStatus(r *gin.Context) {
 // @Produce      json
 // @Param        skip		query      	number  true  "Skip"
 // @Param        limit		query      	number  true  "Limit"
-// @Success      200		{array}		models.Project
-// @Failure      400		{object}	models.Error
-// @Failure      404  		{object}	models.Error
-// @Failure      500  		{object}	models.Error
+// @Success      200		{array}		Project
+// @Failure      400		{object}	Error
+// @Failure      404  		{object}	Error
+// @Failure      500  		{object}	Error
 // @Router       /proposals/ [get]
 func (ctrl *ProposalCtrl) GetList(r *gin.Context) {
 	r.JSON(http.StatusNotImplemented, models.ErrNotImplement())

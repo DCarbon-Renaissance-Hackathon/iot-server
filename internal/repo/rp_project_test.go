@@ -35,7 +35,7 @@ func TestProjectCreate(t *testing.T) {
 }
 
 func TestProjectUpdateDesc(t *testing.T) {
-	var desc = &models.ProjectDescription{
+	var desc = &domain.RProjectUpdateDesc{
 		ProjectID: 1,
 		Language:  "en",
 		Name:      "Test description",
@@ -47,13 +47,14 @@ func TestProjectUpdateDesc(t *testing.T) {
 }
 
 func TestProjectUpdateSpec(t *testing.T) {
-	var spec = &models.ProjectSpec{
+	var spec = &domain.RProjectUpdateSpecs{
 		ProjectID: 1,
 		Specs: models.MapSFloat{
 			"s": 51.0,
 		},
 	}
-	var rs, err = pRepoTest.UpdateSpec(spec)
+
+	var rs, err = pRepoTest.UpdateSpecs(spec)
 	utils.PanicError("TestProjectUpdateSpec", err)
 	utils.Dump("TestProjectUpdateSpec", rs)
 }

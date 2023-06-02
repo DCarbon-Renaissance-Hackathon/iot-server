@@ -40,30 +40,30 @@ func (ctrl *SensorCtrl) GetSensorRepo() domain.ISensor {
 // @Produce      json
 // @Param        sensor				body		RCreateSensor	true	"Sensor information"
 // @Param        Authorization		header		string					true	"Authorization token (`Bearer $token`)"
-// @Success      200				{object}	models.Sensor
-// @Failure      400				{object}	models.Error
-// @Failure      404				{object}	models.Error
-// @Failure      500				{object}	models.Error
+// @Success      200				{object}	Sensor
+// @Failure      400				{object}	Error
+// @Failure      404				{object}	Error
+// @Failure      500				{object}	Error
 // @Router       /sensors/ 			[post]
 func (ctrl *SensorCtrl) Create(r *gin.Context) {
 	var payload = &domain.RCreateSensor{}
 	var err = r.Bind(payload)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest(err.Error()))
+		return
+	}
+
+	_, err = ctrl.iotRepo.GetIOT(payload.IotID)
+	if nil != err {
+		r.JSON(500, models.ErrBadRequest(err.Error()))
+		return
+	}
+
+	sensor, err := ctrl.sensorRepo.CreateSensor(payload)
+	if nil != err {
+		r.JSON(500, err)
 	} else {
-
-		_, err := ctrl.iotRepo.GetIOT(payload.IotID)
-		if nil != err {
-			r.JSON(500, models.ErrBadRequest(err.Error()))
-			return
-		}
-
-		sensor, err := ctrl.sensorRepo.CreateSensor(payload)
-		if nil != err {
-			r.JSON(500, err)
-		} else {
-			r.JSON(http.StatusOK, sensor)
-		}
+		r.JSON(http.StatusOK, sensor)
 	}
 }
 
@@ -75,10 +75,10 @@ func (ctrl *SensorCtrl) Create(r *gin.Context) {
 // @Produce      json
 // @Param        payload					body		domain.RChangeSensorStatus	true	"Request payload"
 // @Param        Authorization				header		string						true	"Authorization token (`Bearer $token`)"
-// @Success      200						{object}	models.Sensor
-// @Failure      400						{object}	models.Error
-// @Failure      404						{object}	models.Error
-// @Failure      500						{object}	models.Error
+// @Success      200						{object}	Sensor
+// @Failure      400						{object}	Error
+// @Failure      404						{object}	Error
+// @Failure      500						{object}	Error
 // @Router       /sensors/change-status		[put]
 func (ctrl *SensorCtrl) ChangeStatus(r *gin.Context) {
 	var payload = &domain.RChangeSensorStatus{}
@@ -102,10 +102,10 @@ func (ctrl *SensorCtrl) ChangeStatus(r *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id					path		int					true	"Sensor id"
-// @Success      200				{object}	models.Sensor
-// @Failure      400				{object}	models.Error
-// @Failure      404				{object}	models.Error
-// @Failure      500				{object}	models.Error
+// @Success      200				{object}	Sensor
+// @Failure      400				{object}	Error
+// @Failure      404				{object}	Error
+// @Failure      500				{object}	Error
 // @Router       /sensors/{id} 		[get]
 func (ctrl *SensorCtrl) GetSensor(r *gin.Context) {
 	var id, err = strconv.ParseInt(r.Param("id"), 10, 64)
@@ -131,10 +131,10 @@ func (ctrl *SensorCtrl) GetSensor(r *gin.Context) {
 // @Param        limit				query		int					false	"Limit"
 // @Param        iot_id				query		int					false	"IOT id, only use iot_id or iot_address"
 // @Param        iot_address		query		string				false	"IOT address, only use iot_id or iot_address"
-// @Success      200				{object}	Sensors
-// @Failure      400				{object}	models.Error
-// @Failure      404				{object}	models.Error
-// @Failure      500				{object}	models.Error
+// @Success      200				{array}		Sensor
+// @Failure      400				{object}	Error
+// @Failure      404				{object}	Error
+// @Failure      500				{object}	Error
 // @Router       /sensors/			[get]
 func (ctrl *SensorCtrl) GetSensors(r *gin.Context) {
 	var skip, _ = strconv.ParseInt(r.Query("skip"), 10, 64)
@@ -155,7 +155,7 @@ func (ctrl *SensorCtrl) GetSensors(r *gin.Context) {
 		iotId = iot.ID
 	}
 
-	sensor, err := ctrl.sensorRepo.GetSensors(&domain.RGetSensors{
+	sensors, err := ctrl.sensorRepo.GetSensors(&domain.RGetSensors{
 		Skip:  int(skip),
 		Limit: int(limit),
 		IotId: iotId,
@@ -163,9 +163,7 @@ func (ctrl *SensorCtrl) GetSensors(r *gin.Context) {
 	if nil != err {
 		r.JSON(500, err)
 	} else {
-		r.JSON(http.StatusOK, &Sensors{
-			Sensors: sensor,
-		})
+		r.JSON(http.StatusOK, sensors)
 	}
 }
 
@@ -176,10 +174,10 @@ func (ctrl *SensorCtrl) GetSensors(r *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        payload			body		domain.RCreateSM		true	"Signature of metric was signed by sensor"
-// @Success      200				{object}	models.Sensor
-// @Failure      400				{object}	models.Error
-// @Failure      404				{object}	models.Error
-// @Failure      500				{object}	models.Error
+// @Success      200				{object}	Sensor
+// @Failure      400				{object}	Error
+// @Failure      404				{object}	Error
+// @Failure      500				{object}	Error
 // @Router       /sensors/sm/create	[post]
 func (ctrl *SensorCtrl) CreateSm(r *gin.Context) {
 	var payload = &domain.RCreateSM{}
@@ -210,10 +208,10 @@ func (ctrl *SensorCtrl) CreateSm(r *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        iot   				body		domain.RCreateSMFromIOT		true	"Signature of metric was signed by iot"
-// @Success      200				{object}	models.Sensor
-// @Failure      400				{object}	models.Error
-// @Failure      404				{object}	models.Error
-// @Failure      500				{object}	models.Error
+// @Success      200				{object}	Sensor
+// @Failure      400				{object}	Error
+// @Failure      404				{object}	Error
+// @Failure      500				{object}	Error
 // @Router       /sensors/sm/create-by-iot	[post]
 func (ctrl *SensorCtrl) CreateSMByIOT(r *gin.Context) {
 	var payload = &domain.RCreateSMFromIOT{}
@@ -249,29 +247,31 @@ func (ctrl *SensorCtrl) CreateSMByIOT(r *gin.Context) {
 // @Tags         Sensors
 // @Accept       json
 // @Produce      json
-// @Param        payload				body		domain.RGetSM	true	"Payload"
-// @Success      200					{object}	SensorMetrics
-// @Failure      400					{object}	models.Error
-// @Failure      404					{object}	models.Error
-// @Failure      500					{object}	models.Error
-// @Router       /sensors/sm/			[get]
+// @Param        from				query		int  			true	"From unix (second)"
+// @Param        to					query		int  			true	"To unix (second)"
+// @Param        iotId				query		int  			true	"Iot id"
+// @Param        skip				query		int  			false	"Skip"
+// @Param        limit				query		int  			true	"Limit (max: 50)"
+// @Param        sensorId			query		int  			false	"Sensor id"
+// @Success      200				{object}	SensorMetrics
+// @Failure      400				{object}	Error
+// @Failure      404				{object}	Error
+// @Failure      500				{object}	Error
+// @Router       /sensors/sm		[get]
 func (ctrl *SensorCtrl) GetMetrics(r *gin.Context) {
 	var payload = &domain.RGetSM{}
 	var err = r.Bind(payload)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest(err.Error()))
-	} else {
-		metrics, err := ctrl.sensorRepo.GetMetrics(payload)
-		if nil != err {
-			r.JSON(500, err)
-		} else {
-			r.JSON(http.StatusOK, &SensorMetrics{Metrics: metrics})
-		}
+		return
 	}
-}
 
-type Sensors struct {
-	Sensors []*models.Sensor `json:"sensors"`
+	metrics, err := ctrl.sensorRepo.GetMetrics(payload)
+	if nil != err {
+		r.JSON(500, err)
+	} else {
+		r.JSON(http.StatusOK, &SensorMetrics{Metrics: metrics})
+	}
 }
 
 type SensorMetrics struct {

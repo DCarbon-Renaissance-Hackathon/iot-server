@@ -161,7 +161,7 @@ func TestSensorGetSM(t *testing.T) {
 	data, err := sensorImpl.GetMetrics(&domain.RGetSM{
 		From:  1578104100,
 		To:    time.Now().Unix(),
-		IotId: 1,
+		IotId: 277,
 	})
 	utils.PanicError("", err)
 	utils.Dump("", data)

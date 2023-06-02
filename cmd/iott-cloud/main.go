@@ -20,7 +20,7 @@ var config = routers.Config{
 	RedisUrl:      utils.StringEnv("REDIS_URL", ""),
 	JwtKey:        utils.StringEnv("JWT_KEY", ""),
 	TokenDuration: utils.Int64Env("TOKEN_DURATION", 1*365*86400),
-	ChainID:       utils.Int64Env("CHAIN_ID", 1),
+	ChainID:       utils.Int64Env("CHAIN_ID", 1337),
 	CarbonVersion: utils.StringEnv("CARBON_VERSION", "1"),
 	CarbonAddress: utils.StringEnv("CARBON_ADDRESS", "0x7BDDCb9699a3823b8B27158BEBaBDE6431152a85"),
 	StorageHost:   env.StorageHost,

@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -218,17 +217,24 @@ func (impl *SensorRepo) CreateSMFromIot(req *domain.RCreateSMFromIOT,
 
 func (impl *SensorRepo) GetMetrics(req *domain.RGetSM) ([]*domain.Metric, error) {
 	var rs = make([]*domain.Metric, 0)
-	var query = impl.db.Table(models.TableNameSm+" as tblSM").
-		Select("tblSM.id, tblSM.indicator, tblSM.created_at, tblSign.iot_id, tblSign.sensor_id ").
-		Joins(fmt.Sprintf("JOIN %s as tblSign ON tblSign.id = tblSM.sign_id", models.TableNameSmSignature)).
-		Where("iot_id = ?", req.IotId).
-		Order("tblSM.created_at asc")
+	var query = impl.db.Table(models.TableNameSmSignature + " as tblSign").
+		Offset(int(req.Skip)).
+		Limit(int(req.Limit)).
+		Select("tblSign.id, tblSign.data, tblSign.sensor_id, tblSign.iot_id, tblSign.created_at, sensors.type as sensor_type").
+		Joins("JOIN sensors ON tblSign.sensor_id = sensors.id ")
+
 	if req.From > 0 {
-		query = query.Where("tblSM.created_at > ?", time.Unix(req.From, 0))
+		query = query.Where("tblSign.created_at > ?", time.Unix(req.From, 0))
 	}
 
 	if req.To > 0 {
-		query = query.Where("tblSM.created_at < ?", time.Unix(req.To, 0))
+		query = query.Where("tblSign.created_at < ?", time.Unix(req.To, 0))
+	}
+
+	query = query.Where("tblSign.iot_id = ?", req.IotId)
+
+	if req.SensorId != 0 {
+		query = query.Where("tblSign.sensor_id = ?", req.SensorId)
 	}
 
 	var err = query.Find(&rs).Error
@@ -236,8 +242,47 @@ func (impl *SensorRepo) GetMetrics(req *domain.RGetSM) ([]*domain.Metric, error)
 		return nil, models.ParsePostgresError("Get metrics", err)
 	}
 
+	for i, sign := range rs {
+		rs[i] = &domain.Metric{
+			ID:        sign.ID,
+			IotId:     sign.IotId,
+			Data:      sign.Data,
+			SensorId:  sign.SensorId,
+			CreatedAt: sign.CreatedAt,
+		}
+	}
+
 	return rs, nil
 }
+
+// func (impl *SensorRepo) GetMetricsLatest(req *domain.RGetSM) ([]*domain.Metric, error) {
+// 	var rs = make([]*domain.Metric, 0)
+// 	var query = impl.db.Table(models.TableNameSmSignature + " as tblSign").
+// 		Limit(int(req.Limit)).
+// 		Select("tblSign.id, tblSign.data, tblSign.sensor_id, tblSign.iot_id, tblSign.created_at, sensors.type as sensor_type").
+// 		Joins("JOIN sensors ON tblSign.sensor_id = sensors.id ")
+// 	if req.From > 0 {
+// 		query = query.Where("tblSign.created_at > ?", time.Unix(req.From, 0))
+// 	}
+// 	if req.To > 0 {
+// 		query = query.Where("tblSign.created_at < ?", time.Unix(req.To, 0))
+// 	}
+// 	query = query.Where("tblSign.iot_id = ?", req.IotId)
+// 	var err = query.Find(&rs).Error
+// 	if nil != err {
+// 		return nil, models.ParsePostgresError("Get metrics", err)
+// 	}
+// 	for i, sign := range rs {
+// 		rs[i] = &domain.Metric{
+// 			ID:        sign.ID,
+// 			IotId:     sign.IotId,
+// 			Data:      sign.Data,
+// 			SensorId:  sign.SensorId,
+// 			CreatedAt: sign.CreatedAt,
+// 		}
+// 	}
+// 	return rs, nil
+// }
 
 // func (impl *SensorRepo) insertMetric(smx *models.SMExtract, signed *models.SmSignature, stype models.SensorType,
 // ) error {

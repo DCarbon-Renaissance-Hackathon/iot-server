@@ -4,7 +4,7 @@ const (
 	TableNameProposal     = "proposals"
 	TableNameProject      = "projects"
 	TableNameProjectDesc  = "projects_desc"
-	TableNameProjectSpec  = "projects_specs"
+	TableNameProjectSpecs = "projects_specs"
 	TableNameProjectImage = "projects_image"
 
 	TableNameIOT      = "iots"

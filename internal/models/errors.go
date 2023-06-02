@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type ECode int
+type ECode int // @name ECode
 
 const (
 	// Common error
@@ -51,7 +51,7 @@ var (
 type Error struct {
 	Code    ECode  `json:"code"`
 	Message string `json:"message"`
-}
+} //@name Error
 
 func NewError(code ECode, msg string) error {
 	var err = &Error{

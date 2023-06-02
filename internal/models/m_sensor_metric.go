@@ -46,13 +46,13 @@ func (*SmGPS) TableName() string { return TableNameSmGPS }
 
 // Sensor metric signature
 type SmSignature struct {
-	ID        string    `json:"id" `                  //
-	IsIotSign bool      `json:"isIotSign" `           //
-	IotID     int64     `json:"iotID" `               //
-	SensorID  int64     `json:"sensorID" `            //
-	Data      string    `json:"data" `                // Hex json of SensorMetricExtract
-	Signed    string    `json:"signed" gorm:"unique"` // RSV Data
-	CreatedAt time.Time `json:"createdAt" `           //
+	ID        string    `json:"id" `                                  //
+	IsIotSign bool      `json:"isIotSign" `                           //
+	IotID     int64     `json:"iotID" gorm:"index_ca,priority:2"`     //
+	SensorID  int64     `json:"sensorID" `                            //
+	Data      string    `json:"data" `                                // Hex json of SensorMetricExtract
+	Signed    string    `json:"signed" gorm:"unique"`                 // RSV Data
+	CreatedAt time.Time `json:"createdAt" gorm:"index_ca,priority:1"` //
 }
 
 func (*SmSignature) TableName() string { return TableNameSmSignature }
@@ -63,17 +63,22 @@ func (sm *SmSignature) VerifySignature(addr EthAddress, sType SensorType) (*SMEx
 		return nil, err
 	}
 
+	x, err := sm.ExtractData()
+	if nil != err {
+		return nil, err
+	}
+
+	return x, x.IsValid(sType)
+}
+
+func (sm *SmSignature) ExtractData() (*SMExtract, error) {
 	rawX, err := hexutil.Decode(sm.Data)
 	if nil != err {
 		return nil, NewError(ECodeInvalidSignature, "Data of signature must be hex")
 	}
 
 	x := &SMExtract{}
-	err = json.Unmarshal(rawX, x)
-	if nil != err {
-		return nil, err
-	}
-	return x, x.IsValid(sType)
+	return x, json.Unmarshal(rawX, x)
 }
 
 type SMExtract struct {

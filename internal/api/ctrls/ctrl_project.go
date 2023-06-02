@@ -3,6 +3,7 @@ package ctrls
 import (
 	"errors"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -50,12 +51,12 @@ func NewProjectCtrl(dbUrl, storageHost, isvToken string) (*ProjectCtrl, error) {
 // @Tags         Project
 // @Accept       json
 // @Produce      json
-// @Param        project		body		RProjectCreate  	true  "Project"
+// @Param        project		body		RProjectCreate  	true	"Project"
 // @Param        Authorization	header		string				true	"Authorization token (`Bearer $token`)"
-// @Success      200			{array}		models.Project
-// @Failure      400			{object}	models.Error
-// @Failure      404			{object}	models.Error
-// @Failure      500			{object}	models.Error
+// @Success      200			{array}		Project
+// @Failure      400			{object}	Error
+// @Failure      404			{object}	Error
+// @Failure      500			{object}	Error
 // @Router       /projects/ 	[post]
 func (ctrl *ProjectCtrl) Create(r *gin.Context) {
 	var payload = &domain.RProjectCreate{}
@@ -64,12 +65,86 @@ func (ctrl *ProjectCtrl) Create(r *gin.Context) {
 		r.JSON(400, models.ErrBadRequest("Bind error: "+err.Error()))
 		return
 	}
+
 	project, err := ctrl.repo.Create(payload)
 	if nil != err {
 		r.JSON(500, err)
-	} else {
-		r.JSON(200, project)
+		return
 	}
+
+	r.JSON(200, project)
+}
+
+// Create godoc
+// @Summary      Create project
+// @Description  Create project
+// @Tags         Project
+// @Accept       json
+// @Produce      json
+// @Param        project				body		RProjectUpdateDesc		true	"Project"
+// @Param        Authorization			header		string					true	"Authorization token (`Bearer $token`)"
+// @Success      200					{array}		ProjectDescription
+// @Failure      400					{object}	Error
+// @Failure      404					{object}	Error
+// @Failure      500					{object}	Error
+// @Router       /projects/update-desc 	[post]
+func (ctrl *ProjectCtrl) UpdateDesc(r *gin.Context) {
+	var payload = &domain.RProjectUpdateDesc{}
+	var err = r.Bind(payload)
+	if nil != err {
+		r.JSON(400, models.ErrBadRequest("Bind error: "+err.Error()))
+		return
+	}
+
+	err = ctrl.isProjectOwner(r, payload.ProjectID)
+	if nil != err {
+		r.JSON(http.StatusForbidden, err)
+		return
+	}
+
+	project, err := ctrl.repo.UpdateDesc(payload)
+	if nil != err {
+		r.JSON(500, err)
+		return
+	}
+
+	r.JSON(200, project)
+}
+
+// Create godoc
+// @Summary      UpdateSpecs
+// @Description  Update specs of project
+// @Tags         Project
+// @Accept       json
+// @Produce      json
+// @Param        project					body		RProjectUpdateSpecs	true	"Project"
+// @Param        Authorization				header		string				true	"Authorization token (`Bearer $token`)"
+// @Success      200						{array}		ProjectSpec
+// @Failure      400						{object}	Error
+// @Failure      404						{object}	Error
+// @Failure      500						{object}	Error
+// @Router       /projects/update-specs		[post]
+func (ctrl *ProjectCtrl) UpdateSpecs(r *gin.Context) {
+	var payload = &domain.RProjectUpdateSpecs{}
+	var err = r.Bind(payload)
+	if nil != err {
+		r.JSON(400, models.ErrBadRequest("Bind error: "+err.Error()))
+		return
+	}
+
+	err = ctrl.isProjectOwner(r, payload.ProjectID)
+	if nil != err {
+		r.JSON(http.StatusForbidden, err)
+		return
+	}
+
+	spec, err := ctrl.repo.UpdateSpecs(payload)
+	if nil != err {
+		r.JSON(500, err)
+		return
+	}
+
+	r.JSON(200, spec)
 }
 
 // Create godoc
@@ -78,38 +153,25 @@ func (ctrl *ProjectCtrl) Create(r *gin.Context) {
 // @Tags         Project
 // @Accept       mpfd
 // @Produce      json
-// @Param        projectId				formData	int64			true  "Project id"
-// @Param        image					formData	file			true  "Project image (*.png, *.jpg)"
+// @Param        projectId				formData	int64			true	"Project id"
+// @Param        image					formData	file			true	"Project image (*.png, *.jpg)"
 // @Param        Authorization			header		string			true	"Authorization token (`Bearer $token`)"
-// @Success      200					{array}		models.Project
-// @Failure      400					{object}	models.Error
-// @Failure      404					{object}	models.Error
-// @Failure      500					{object}	models.Error
+// @Success      200					{array}		Project
+// @Failure      400					{object}	Error
+// @Failure      404					{object}	Error
+// @Failure      500					{object}	Error
 // @Router       /projects/add-image	[post]
 func (ctrl *ProjectCtrl) AddImage(r *gin.Context) {
-	user, err := mids.GetAuth(r.Request.Context())
-	if nil != err {
-		r.JSON(500, models.ErrInternal(errors.New("missing check authen in project add image")))
-		return
-	}
-
 	projectId, err := strconv.ParseInt(r.PostForm("projectId"), 10, 64)
 	if nil != err {
 		r.JSON(400, models.ErrBadRequest("Project id must be int"))
 		return
 	}
 
-	if user.Role != "super-admin" {
-		owner, err := ctrl.repo.GetOwner(projectId)
-		if nil != err {
-			r.JSON(500, err)
-			return
-		}
-
-		if models.EthAddress(user.EthAddress) != models.EthAddress(owner) {
-			r.JSON(403, models.ErrorPermissionDenied)
-			return
-		}
+	err = ctrl.isProjectOwner(r, projectId)
+	if nil != err {
+		r.JSON(400, err)
+		return
 	}
 
 	img, err := r.FormFile("image")
@@ -123,6 +185,7 @@ func (ctrl *ProjectCtrl) AddImage(r *gin.Context) {
 	ext := filepath.Ext(fileName)
 	fileName = ctrl.dstTmp + "/" + uuid.NewV4().String() + ext
 	log.Println("Save file ")
+
 	err = r.SaveUploadedFile(img, fileName)
 	if nil != err {
 		r.JSON(400, models.ErrInternal(errors.New("missing image")))
@@ -155,10 +218,10 @@ func (ctrl *ProjectCtrl) AddImage(r *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        projectId					path  		string		true	"Project id"
-// @Success      200						{array}		models.Project
-// @Failure      400						{object}	models.Error
-// @Failure      404  						{object}	models.Error
-// @Failure      500  						{object}	models.Error
+// @Success      200						{array}		Project
+// @Failure      400						{object}	Error
+// @Failure      404  						{object}	Error
+// @Failure      500  						{object}	Error
 // @Router       /projects/{projectId} 		[get]
 func (ctrl *ProjectCtrl) GetByID(r *gin.Context) {
 	id, err := strconv.ParseInt(r.Param("projectId"), 10, 64)
@@ -188,10 +251,10 @@ func (ctrl *ProjectCtrl) GetByID(r *gin.Context) {
 // @Produce      json
 // @Param        skip		query		integer				true		"Skip"
 // @Param        limit		query		integer				true		"Limit"
-// @Success      200		{array}		models.Project
-// @Failure      400		{object}	models.Error
-// @Failure      404		{object}	models.Error
-// @Failure      500		{object}	models.Error
+// @Success      200		{array}		Project
+// @Failure      400		{object}	Error
+// @Failure      404		{object}	Error
+// @Failure      500		{object}	Error
 // @Router       /projects/ [get]
 func (ctrl *ProjectCtrl) GetList(r *gin.Context) {
 	skip, err := strconv.ParseInt(r.DefaultQuery("skip", "0"), 10, 64)
@@ -226,65 +289,34 @@ func (ctrl *ProjectCtrl) GetList(r *gin.Context) {
 // @Tags         Project
 // @Accept       json
 // @Produce      json
-// @Param        payload	body						models.Project  true  "Project"
-// @Param        projectId	path  						string 			true  "Project id"
-// @Success      200		{array}						models.Project
+// @Param        payload	body						Project			true	"Project"
+// @Param        projectId	path  						string 			true	"Project id"
+// @Success      200		{array}						Project
 // @Failure      400		{object}					models.Error
 // @Failure      404		{object}					models.Error
 // @Failure      500		{object}					models.Error
 // @Router       /projects/{projectId}/change-status 	[put]
-func (ctrl *ProjectCtrl) ChangeStatus(r *gin.Context) {
-
-}
-
-// Create godoc
-// @Summary      GetByBB
-// @Description  Get project by bounding box
-// @Tags         Project
-// @Accept       json
-// @Produce      json
-// @Param        minLng				query			number  true  "Min longitude"
-// @Param        minLat				query			number  true  "Min latitude"
-// @Param        maxLng				query			number  true  "Max longitude"
-// @Param        maxLat				query			number  true  "Max latitude"
-// @Success      200				{array}			models.Project
-// @Failure      400				{object}		models.Error
-// @Failure      404				{object}		models.Error
-// @Failure      500				{object}		models.Error
-// @Router       /projects/by-bb	[get]
-// func (ctrl *ProjectCtrl) GetByBB(r *gin.Context) {
-// 	minLng, err := strconv.ParseFloat(r.Query("minLng"), 64)
-// 	if nil != err {
-// 		r.JSON(400, models.ErrBadRequest("Min longitude must be double"))
-// 		return
-// 	}
-// 	minLat, err := strconv.ParseFloat(r.Query("minLat"), 64)
-// 	if nil != err {
-// 		r.JSON(400, models.ErrBadRequest("Min latitude must be double"))
-// 		return
-// 	}
-// 	maxLng, err := strconv.ParseFloat(r.Query("maxLng"), 64)
-// 	if nil != err {
-// 		r.JSON(400, models.ErrBadRequest("Max longitude must be double"))
-// 		return
-// 	}
-// 	maxLat, err := strconv.ParseFloat(r.Query("maxLat"), 64)
-// 	if nil != err {
-// 		r.JSON(400, models.ErrBadRequest("Max latitude must be double"))
-// 		return
-// 	}
-// 	var min = &models.Point4326{
-// 		Lng: minLng,
-// 		Lat: minLat,
-// 	}
-// 	var max = &models.Point4326{
-// 		Lng: maxLng,
-// 		Lat: maxLat,
-// 	}
-// 	data, err := ctrl.repo.GetByBB(min, max, "")
-// 	if nil != err {
-// 		r.JSON(500, err)
-// 	} else {
-// 		r.JSON(200, data)
-// 	}
+// func (ctrl *ProjectCtrl) ChangeStatus(r *gin.Context) {
 // }
+
+func (ctrl *ProjectCtrl) isProjectOwner(r *gin.Context, projectId int64,
+) error {
+	user, err := mids.GetAuth(r.Request.Context())
+	if nil != err {
+		return models.ErrInternal(errors.New("missing check authen in project add image"))
+	}
+
+	if user.Role == "super-admin" {
+		return nil
+	}
+
+	owner, err := ctrl.repo.GetOwner(projectId)
+	if nil != err {
+		return err
+	}
+
+	if models.EthAddress(user.EthAddress) != models.EthAddress(owner) {
+		return models.ErrorPermissionDenied
+	}
+	return nil
+}

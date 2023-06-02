@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dcarbon/go-shared/libs/broker"
 	"github.com/Dcarbon/go-shared/libs/esign"
+	"github.com/Dcarbon/go-shared/libs/utils"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/repo"
@@ -35,7 +36,7 @@ func NewIotCtrl(typedDomain *esign.TypedDataDomain,
 	if nil != err {
 		return nil, err
 	}
-
+	utils.Dump("Type domain config ", typedDomain)
 	irepo, err := repo.NewIOTRepo(dMinter)
 	if nil != err {
 		return nil, err
@@ -61,10 +62,10 @@ func (ctrl *IotCtrl) SetSensor(sensor domain.ISensor) {
 // @Produce      json
 // @Param        iot   				body		RIotCreate			true	"IOT information"
 // @Param        Authorization		header		string				true	"Authorization token (`Bearer $token`)"
-// @Success      200				{object}	models.IOTDevice
-// @Failure      400				{object}	models.Error
-// @Failure      404				{object}	models.Error
-// @Failure      500				{object}	models.Error
+// @Success      200				{object}	IOTDevice
+// @Failure      400				{object}	Error
+// @Failure      404				{object}	Error
+// @Failure      500				{object}	Error
 // @Router       /iots/				[post]
 func (ctrl *IotCtrl) Create(r *gin.Context) {
 	var payload = &domain.RIotCreate{}
@@ -81,6 +82,7 @@ func (ctrl *IotCtrl) Create(r *gin.Context) {
 	}
 
 	r.JSON(200, iot)
+	log.Println("Publish iot created")
 	ctrl.pusher.PushIOTCreate(&broker.EventIOTCreate{
 		ID:      iot.ID,
 		Status:  broker.DeviceStatus(iot.Status),
@@ -99,10 +101,10 @@ func (ctrl *IotCtrl) Create(r *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        iotId				path  		int 				true	"IOT id"
-// @Success      200				{object}	models.IOTDevice
-// @Failure      400				{object}	models.Error
-// @Failure      404				{object}	models.Error
-// @Failure      500				{object}	models.Error
+// @Success      200				{object}	IOTDevice
+// @Failure      400				{object}	Error
+// @Failure      404				{object}	Error
+// @Failure      500				{object}	Error
 // @Router       /iots/{iotId}		[get]
 func (ctrl *IotCtrl) GetIot(r *gin.Context) {
 	iotId, err := strconv.Atoi(r.Param("iotId"))
@@ -128,8 +130,8 @@ func (ctrl *IotCtrl) GetIot(r *gin.Context) {
 // @Param        payload			body		RIotChangeStatus	true	"Payload"
 // @Param        iotId				path  		int 				true	"IOT id"
 // @Param        Authorization		header		string				true	"Authorization token (`Bearer $token`)"
-// @Success      200				{object}	models.IOTDevice
-// @Failure      400				{object}	models.Error
+// @Success      200				{object}	IOTDevice
+// @Failure      400				{object}	Error
 // @Router       /iots/{iotId}/change-status [put]
 func (ctrl *IotCtrl) ChangeStatus(r *gin.Context) {
 	var payload = &domain.RIotChangeStatus{}
@@ -165,7 +167,7 @@ func (ctrl *IotCtrl) ChangeStatus(r *gin.Context) {
 				// }
 
 				ctrl.sensor.ChangeSensorStatus(&domain.RChangeSensorStatus{
-					Status: payload.Status,
+					Status: *payload.Status,
 					ID:     ss.ID,
 				})
 			}
@@ -190,8 +192,8 @@ func (ctrl *IotCtrl) ChangeStatus(r *gin.Context) {
 // @Param        minLat   	query      	number  true  "Min latitude"
 // @Param        maxLng   	query      	number  true  "Max longitude"
 // @Param        maxLat   	query      	number  true  "Max latitude"
-// @Success      200		{array}		models.IOTDevice
-// @Failure      400		{object}	models.Error
+// @Success      200		{array}		IOTDevice
+// @Failure      400		{object}	Error
 // @Router       /iots/by-bb [get]
 func (ctrl *IotCtrl) GetByBB(r *gin.Context) {
 	minLng, err := strconv.ParseFloat(r.Query("minLng"), 64)
@@ -241,9 +243,9 @@ func (ctrl *IotCtrl) GetByBB(r *gin.Context) {
 // @Param			iotAddr			path		string				true	"IOT address"
 // @Param			iot				body		models.MintSign		true	"Signature"
 // @Success			200				{object}	models.MintSign
-// @Failure			400				{object}	models.Error
-// @Failure			404				{object}	models.Error
-// @Failure			500				{object}	models.Error
+// @Failure			400				{object}	Error
+// @Failure			404				{object}	Error
+// @Failure			500				{object}	Error
 // @Router			/iots/{iotAddr}/mint-sign	[post]
 func (ctrl *IotCtrl) CreateMint(r *gin.Context) {
 	var mint = &models.MintSign{}
@@ -271,9 +273,9 @@ func (ctrl *IotCtrl) CreateMint(r *gin.Context) {
 // @Param			from			query		number				true  "Duration start"
 // @Param			to				query		number				true  "Duration end"
 // @Success			200				{array}		models.MintSign
-// @Failure			400				{object}	models.Error
-// @Failure			404				{object}	models.Error
-// @Failure			500				{object}	models.Error
+// @Failure			400				{object}	Error
+// @Failure			404				{object}	Error
+// @Failure			500				{object}	Error
 // @Router			/iots/{iotId}/mint-sign/ 	[get]
 func (ctrl *IotCtrl) GetMintSigns(r *gin.Context) {
 	iotId, err := strconv.ParseInt(r.Param("iotId"), 10, 64)
@@ -313,9 +315,9 @@ func (ctrl *IotCtrl) GetMintSigns(r *gin.Context) {
 // @Accept			json
 // @Produce			json
 // @Success			200				{integer}	esign.TypedDataDomain
-// @Failure			400				{object}	models.Error
-// @Failure			404				{object}	models.Error
-// @Failure			500				{object}	models.Error
+// @Failure			400				{object}	Error
+// @Failure			404				{object}	Error
+// @Failure			500				{object}	Error
 // @Router			/iots/seperator [get]
 func (ctrl *IotCtrl) GetDomainSeperator(r *gin.Context) {
 	r.JSON(200, ctrl.separator)
@@ -373,9 +375,9 @@ func (ctrl *IotCtrl) GetIOTRepo() domain.IIot {
 // @Param        from		query		integer			true  "Timestamp"
 // @Param        to			query		integer			true  "Timestamp"
 // @Success      200		{array}		models.Metric
-// @Failure      400		{object}	models.Error
-// @Failure      404		{object}	models.Error
-// @Failure      500		{object}	models.Error
+// @Failure      400		{object}	Error
+// @Failure      404		{object}	Error
+// @Failure      500		{object}	Error
 // @Router       /iots/{iotAddr}/metrics [get]
 // func (ctrl *IotCtrl) GetMetrics(r *gin.Context) {
 // 	from, err := strconv.ParseInt(r.Query("from"), 10, 64)
@@ -438,9 +440,9 @@ func (ctrl *IotCtrl) GetIOTRepo() domain.IIot {
 // @Param			iotAddr			path		string  			true  "IOT address"
 // @Param			fromNonce		query		number				true  "LatestNonce"
 // @Success			200				{integer}	integer
-// @Failure			400				{object}	models.Error
-// @Failure			404				{object}	models.Error
-// @Failure			500				{object}	models.Error
+// @Failure			400				{object}	Error
+// @Failure			404				{object}	Error
+// @Failure			500				{object}	Error
 // @Router			/iots/{iotAddr}/get-tt [get]
 // func (ctrl *IotCtrl) GetTT(r *gin.Context) {
 // 	var iotAddress = r.Param("iotAddr")

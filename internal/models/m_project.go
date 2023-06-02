@@ -10,10 +10,8 @@ import (
 type ProjectStatus int
 
 const (
-	ProjectStatusReject      ProjectStatus = -1
-	ProjectStatusRegister    ProjectStatus = 1
-	ProjectStatusDescUpdated ProjectStatus = 2
-	ProjectStatusSpecUpdated ProjectStatus = 3
+	ProjectStatusReject   ProjectStatus = -1
+	ProjectStatusRegister ProjectStatus = 1
 
 	ProjectStatusActived ProjectStatus = 20
 )
@@ -23,12 +21,12 @@ type Project struct {
 	Owner     EthAddress            `json:"owner" gorm:"index"`                           // ETH address
 	Status    ProjectStatus         `json:"status"`                                       //
 	Location  *Point4326            `json:"location" gorm:"type:geometry(POINT, 4326)"`   //
-	Specs     *ProjectSpec          `json:"specs,omitempty" gorm:"foreignKey:ProjectID"`  //
+	Specs     *ProjectSpecs         `json:"specs,omitempty" gorm:"foreignKey:ProjectID"`  //
 	Descs     []*ProjectDescription `json:"descs,omitempty" gorm:"foreignKey:ProjectID"`  //
 	Images    []*ProjectImage       `json:"images,omitempty" gorm:"foreignKey:ProjectID"` //
 	CreatedAt time.Time             `json:"createdAt"`                                    //
 	UpdatedAt time.Time             `json:"updatedAt"`                                    //
-}
+} //@name Project
 
 func (*Project) TableName() string { return TableNameProject }
 
@@ -40,19 +38,19 @@ type ProjectDescription struct {
 	Desc      string    `json:"desc"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
-}
+} //@name ProjectDescription
 
 func (*ProjectDescription) TableName() string { return TableNameProjectDesc }
 
-type ProjectSpec struct {
+type ProjectSpecs struct {
 	ID        int64     `json:"id" gorm:"primaryKey"`
 	ProjectID int64     `json:"projectId" gorm:"unique"`
 	Specs     MapSFloat `json:"specs" gorm:"type:json"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
-}
+} //@name ProjectSpec
 
-func (*ProjectSpec) TableName() string { return TableNameProjectSpec }
+func (*ProjectSpecs) TableName() string { return TableNameProjectSpecs }
 
 type ProjectImage struct {
 	ID        int64     `json:"id"`        //
@@ -63,7 +61,7 @@ type ProjectImage struct {
 
 func (*ProjectImage) TableName() string { return TableNameProjectImage }
 
-type MapSFloat map[string]float64
+type MapSFloat map[string]float64 //@name MapSFloat
 
 func (m *MapSFloat) Scan(value interface{}) error {
 	if nil == m {
