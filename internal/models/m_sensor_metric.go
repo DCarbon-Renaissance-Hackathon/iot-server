@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
@@ -57,7 +58,7 @@ type SmSignature struct {
 
 func (*SmSignature) TableName() string { return TableNameSmSignature }
 
-func (sm *SmSignature) VerifySignature(addr EthAddress, sType SensorType) (*SMExtract, error) {
+func (sm *SmSignature) VerifySignature(addr EthAddress, sType dmodels.SensorType) (*SMExtract, error) {
 	err := addr.VerifyPersonalSign(sm.Data, sm.Signed)
 	if nil != err {
 		return nil, err
@@ -74,7 +75,7 @@ func (sm *SmSignature) VerifySignature(addr EthAddress, sType SensorType) (*SMEx
 func (sm *SmSignature) ExtractData() (*SMExtract, error) {
 	rawX, err := hexutil.Decode(sm.Data)
 	if nil != err {
-		return nil, NewError(ECodeInvalidSignature, "Data of signature must be hex")
+		return nil, dmodels.NewError(dmodels.ECodeInvalidSignature, "Data of signature must be hex")
 	}
 
 	x := &SMExtract{}
@@ -88,9 +89,9 @@ type SMExtract struct {
 	Address   EthAddress `json:"address"` // Sign (sensor or iot ) address
 }
 
-func (smx *SMExtract) IsValid(sType SensorType) error {
+func (smx *SMExtract) IsValid(sType dmodels.SensorType) error {
 	if smx.From <= 1578104100 || smx.To > time.Now().Unix() {
-		return NewError(ECodeSensorInvalidMetric, "Time range of metric is invalid [1578104100, now)")
+		return dmodels.NewError(dmodels.ECodeSensorInvalidMetric, "Time range of metric is invalid [1578104100, now)")
 	}
 
 	err := smx.Indicator.IsValid(sType)
@@ -135,7 +136,7 @@ type GPSMetric struct {
 type AllMetric struct {
 	DefaultMetric
 	GPSMetric
-}
+} // @name models.AllMetric
 
 func (am *AllMetric) Scan(value interface{}) error {
 	if value == nil {
@@ -169,19 +170,19 @@ func (am AllMetric) Value() (driver.Value, error) {
 	return json.Marshal(am)
 }
 
-func (am *AllMetric) IsValid(sType SensorType) error {
+func (am *AllMetric) IsValid(sType dmodels.SensorType) error {
 	switch sType {
-	case SensorTypeFlow:
+	case dmodels.SensorTypeFlow:
 		if am.DefaultMetric.Val <= 0 {
-			return NewError(ECodeSensorInvalidMetric, "Indicator of metric (value) must be > 0")
+			return dmodels.NewError(dmodels.ECodeSensorInvalidMetric, "Indicator of metric (value) must be > 0")
 		}
-	case SensorTypePower:
+	case dmodels.SensorTypePower:
 		if am.DefaultMetric.Val <= 0 {
-			return NewError(ECodeSensorInvalidMetric, "Indicator of metric (value) must be > 0")
+			return dmodels.NewError(dmodels.ECodeSensorInvalidMetric, "Indicator of metric (value) must be > 0")
 		}
-	case SensorTypeGPS:
+	case dmodels.SensorTypeGPS:
 		if am.Lat == 0 && am.Lng == 0 {
-			return NewError(ECodeSensorInvalidMetric, "Indicator of metric (gps) must be != 0")
+			return dmodels.NewError(dmodels.ECodeSensorInvalidMetric, "Indicator of metric (gps) must be != 0")
 		}
 	}
 	return nil

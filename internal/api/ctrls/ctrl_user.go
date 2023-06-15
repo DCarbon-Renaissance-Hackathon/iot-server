@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/iott-cloud/internal/api/mids"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
@@ -47,20 +48,20 @@ func (ctrl *UserCtrl) Login(r *gin.Context) {
 	var payload = &domain.RLogin{}
 	var err = r.BindJSON(payload)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Body must be json"))
+		r.JSON(400, dmodels.ErrBadRequest("Body must be json"))
 		return
 	}
 
 	var org = fmt.Sprintf("dcarbon_%d_%s", payload.Now, payload.Address)
 	user, err := ctrl.repo.Login(payload.Address, payload.Signature, org)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Invalid signature"))
+		r.JSON(400, dmodels.ErrBadRequest("Invalid signature"))
 		return
 	}
 
 	token, err := mids.EncodeJWT(ctrl.jwtKey, user, ctrl.tokenDuration)
 	if nil != err {
-		r.JSON(500, models.ErrInternal(err))
+		r.JSON(500, dmodels.ErrInternal(err))
 		return
 	}
 
@@ -85,13 +86,13 @@ func (ctrl *UserCtrl) Login(r *gin.Context) {
 func (ctrl *UserCtrl) Update(r *gin.Context) {
 	var current, err = mids.GetAuth(r.Request.Context())
 	if nil != err {
-		r.JSON(500, models.ErrInternal(errors.New("missing check user")))
+		r.JSON(500, dmodels.ErrInternal(errors.New("missing check user")))
 	}
 
 	var user = &models.User{}
 	err = r.BindJSON(user)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest(""))
+		r.JSON(400, dmodels.ErrBadRequest(""))
 		return
 	}
 

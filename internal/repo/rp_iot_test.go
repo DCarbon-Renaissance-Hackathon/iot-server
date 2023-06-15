@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/go-shared/libs/utils"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
@@ -56,7 +57,7 @@ func TestIOTCreate(t *testing.T) {
 }
 
 func TestIOTChangeStatus(t *testing.T) {
-	var status = models.DeviceStatusSuccess
+	var status = dmodels.DeviceStatusSuccess
 	var data, err = iotRepoTest.ChangeStatus(
 		&domain.RIotChangeStatus{
 			IotId:  1,

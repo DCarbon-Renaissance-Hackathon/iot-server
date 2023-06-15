@@ -3,6 +3,7 @@ package repo
 import (
 	"testing"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/go-shared/libs/utils"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
@@ -42,7 +43,7 @@ func TestChangeMetricsGPS(t *testing.T) {
 				},
 			},
 		},
-		models.SensorTypeGPS)
+		dmodels.SensorTypeGPS)
 	utils.PanicError("", err)
 	utils.Dump("", data)
 }
@@ -58,7 +59,7 @@ func TestChangeMetricsPower(t *testing.T) {
 				},
 			},
 		},
-		models.SensorTypePower,
+		dmodels.SensorTypePower,
 	)
 	utils.PanicError("", err)
 	utils.Dump("", data)

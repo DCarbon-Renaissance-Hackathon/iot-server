@@ -3,8 +3,8 @@ package ctrls
 import (
 	"net/http"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
-	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/repo"
 	"github.com/gin-gonic/gin"
 )
@@ -39,7 +39,7 @@ func NewProposalCtrl(dbUrl string) (*ProposalCtrl, error) {
 // @Failure      500  		{object}	Error
 // @Router       /proposals/ 	[post]
 func (ctrl *ProposalCtrl) Create(r *gin.Context) {
-	r.JSON(http.StatusNotImplemented, models.ErrNotImplement())
+	r.JSON(http.StatusNotImplemented, dmodels.ErrNotImplement())
 }
 
 // Create godoc
@@ -55,7 +55,7 @@ func (ctrl *ProposalCtrl) Create(r *gin.Context) {
 // @Failure      500  		{object}		Error
 // @Router       /proposals/change-status 	[put]
 func (ctrl *ProposalCtrl) ChangeStatus(r *gin.Context) {
-	r.JSON(http.StatusNotImplemented, models.ErrNotImplement())
+	r.JSON(http.StatusNotImplemented, dmodels.ErrNotImplement())
 }
 
 // Create godoc
@@ -72,5 +72,5 @@ func (ctrl *ProposalCtrl) ChangeStatus(r *gin.Context) {
 // @Failure      500  		{object}	Error
 // @Router       /proposals/ [get]
 func (ctrl *ProposalCtrl) GetList(r *gin.Context) {
-	r.JSON(http.StatusNotImplemented, models.ErrNotImplement())
+	r.JSON(http.StatusNotImplemented, dmodels.ErrNotImplement())
 }

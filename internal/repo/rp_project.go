@@ -3,6 +3,7 @@ package repo
 import (
 	"time"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/rss"
@@ -39,7 +40,7 @@ func (pRepo *projectRepo) Create(req *domain.RProjectCreate,
 	var e1 = pRepo.tblProject().Transaction(func(dbTx *gorm.DB) error {
 		err := dbTx.Table(models.TableNameProject).Create(project).Error
 		if nil != err {
-			models.ParsePostgresError("Create project", err)
+			return dmodels.ParsePostgresError("Create project", err)
 		}
 
 		return nil
@@ -66,7 +67,7 @@ func (pRepo *projectRepo) UpdateDesc(req *domain.RProjectUpdateDesc,
 		).
 		Create(desc).Error
 	if nil != err {
-		return nil, models.ParsePostgresError("Update project desc", err)
+		return nil, dmodels.ParsePostgresError("Update project desc", err)
 	}
 	return desc, nil
 }
@@ -83,7 +84,7 @@ func (pRepo *projectRepo) UpdateSpecs(req *domain.RProjectUpdateSpecs,
 			},
 		).Create(spec).Error
 	if nil != err {
-		return nil, models.ParsePostgresError("Update project desc", err)
+		return nil, dmodels.ParsePostgresError("Update project desc", err)
 	}
 	return spec, nil
 }
@@ -103,7 +104,7 @@ func (pRepo *projectRepo) GetById(id int64, lang string) (*models.Project, error
 
 	var err = query.First(project).Error
 	if nil != err {
-		return nil, models.ParsePostgresError("Project", err)
+		return nil, dmodels.ParsePostgresError("Project", err)
 	}
 
 	return project, nil
@@ -123,7 +124,7 @@ func (pRepo *projectRepo) GetList(filter *domain.RProjectFilter,
 	var data = make([]*models.Project, 0)
 	var err = tbl.Find(&data).Error
 	if nil != err {
-		return nil, models.ParsePostgresError("Project", err)
+		return nil, dmodels.ParsePostgresError("Project", err)
 	}
 	return data, nil
 }
@@ -136,14 +137,14 @@ func (pRepo *projectRepo) GetByBB(min, max *models.Point4326, owner string,
 			"ST_WITHIN(pos, ST_MakeEnvelope(?, ?, ?, ?, 4326))",
 			min.Lng, min.Lat, max.Lng, max.Lat).
 		Find(&data).Error
-	return data, models.ParsePostgresError("Project", err)
+	return data, dmodels.ParsePostgresError("Project", err)
 }
 
 func (pRepo *projectRepo) GetByID(id int64) (*models.Project, error) {
 	var data = &models.Project{}
 	var err = pRepo.tblProject().Where("id = ?", id).First(data).Error
 	if nil != err {
-		return nil, models.ParsePostgresError("Project", err)
+		return nil, dmodels.ParsePostgresError("Project", err)
 	}
 	return data, nil
 }
@@ -154,7 +155,7 @@ func (pRepo *projectRepo) ChangeStatus(id string, status models.ProjectStatus,
 		Where("id = ?", id).
 		Update("status", status).
 		Error
-	return models.ParsePostgresError("Project", err)
+	return dmodels.ParsePostgresError("Project", err)
 }
 
 func (pRepo *projectRepo) GetOwner(projectId int64) (string, error) {
@@ -163,7 +164,7 @@ func (pRepo *projectRepo) GetOwner(projectId int64) (string, error) {
 		Where("id = ?", projectId).
 		Pluck("owner", &owner).Error
 	if nil != err {
-		return "", models.ParsePostgresError("Get owner ", err)
+		return "", dmodels.ParsePostgresError("Get owner ", err)
 	}
 	return owner, nil
 }
@@ -178,7 +179,7 @@ func (pRepo *projectRepo) AddImage(req *domain.RProjectAddImage,
 	}
 	var err = pRepo.tblImage().Create(img).Error
 	if nil != err {
-		return nil, models.ParsePostgresError("AddImage ", err)
+		return nil, dmodels.ParsePostgresError("AddImage ", err)
 	}
 	return img, nil
 }

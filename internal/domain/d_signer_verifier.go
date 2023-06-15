@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -30,22 +31,22 @@ func NewVerifier() ISignerVerifier {
 
 func (v *verifier) IsValid(token *SignedToken) error {
 	if token.SignedAt > time.Now().Unix() {
-		return models.ErrBadRequest("Signature too early ")
+		return dmodels.ErrBadRequest("Signature too early ")
 	}
 
 	if token.SignedAt < time.Now().Unix()-4300 {
-		return models.ErrBadRequest("Signature was expired")
+		return dmodels.ErrBadRequest("Signature was expired")
 	}
 
 	var org = fmt.Sprintf("dcarbon_%d_%s", token.SignedAt, token.Address)
 	var signedBytes, err = hexutil.Decode(token.Signed)
 	if nil != err {
-		return models.ErrBadRequest("Invalid sign " + err.Error())
+		return dmodels.ErrBadRequest("Invalid sign " + err.Error())
 	}
 
 	err = esign.VerifyPersonalSign(string(token.Address), []byte(org), signedBytes)
 	if nil != err {
-		return models.ErrBadRequest("Invalid signed" + err.Error())
+		return dmodels.ErrBadRequest("Invalid signed" + err.Error())
 	}
 	return nil
 }

@@ -3,8 +3,8 @@ package ctrls
 import (
 	"strconv"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
-	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/repo"
 	"github.com/gin-gonic/gin"
 )
@@ -46,7 +46,7 @@ func NewOperatorCtrl(iot domain.IIot, sensor domain.ISensor,
 func (ctrl *OperatorCtrl) GetStatus(r *gin.Context) {
 	iotId, err := strconv.Atoi(r.Param("iotId"))
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Invalid iot id (Must be integer)"))
+		r.JSON(400, dmodels.ErrBadRequest("Invalid iot id (Must be integer)"))
 		return
 	}
 
@@ -73,7 +73,7 @@ func (ctrl *OperatorCtrl) GetStatus(r *gin.Context) {
 func (ctrl *OperatorCtrl) GetMetrics(r *gin.Context) {
 	iotId, err := strconv.Atoi(r.Param("iotId"))
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Invalid iot id (Must be integer)"))
+		r.JSON(400, dmodels.ErrBadRequest("Invalid iot id (Must be integer)"))
 		return
 	}
 

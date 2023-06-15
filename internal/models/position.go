@@ -15,18 +15,10 @@ const (
 	textPrefix = "SRID=4326;POINT("
 )
 
-// select *,
-// ST_DistanceSphere(states."location",
-// ST_SetSRID(ST_MakePoint(105.834160, 21.037763), 4326)) as distance
-// from states
-// where ST_DWithin(states."location", ST_SetSRID(ST_MakePoint(105.834160, 21.027763), 4326), 1)
-// order by ST_Distance(states."location", ST_SetSRID(ST_MakePoint(105.834160, 21.027763), 4326));
-
-// Point4326 :
 type Point4326 struct {
 	Lat float64 `json:"lat"` // vi tuyen (pgis: y)
 	Lng float64 `json:"lng"` // kinh tuyen:(pgis: x)
-}
+} // @name models.Point4326
 
 func (p *Point4326) String() string {
 	return fmt.Sprintf("SRID=4326;POINT(%v %v)", p.Lng, p.Lat)
@@ -51,12 +43,10 @@ func (p *Point4326) Scan(val interface{}) error {
 	return p.fromEWKB(s)
 }
 
-// Value :
 func (p Point4326) Value() (driver.Value, error) {
 	return p.String(), nil
 }
 
-// MakePoint :
 func (p *Point4326) MakePoint() string {
 	return fmt.Sprintf("ST_SetSRID(ST_MakePoint(%f, %f), 4326)", p.Lng, p.Lat)
 }
@@ -116,3 +106,10 @@ func (p *Point4326) fromEWKB(val string) error {
 
 	return nil
 }
+
+// select *,
+// ST_DistanceSphere(states."location",
+// ST_SetSRID(ST_MakePoint(105.834160, 21.037763), 4326)) as distance
+// from states
+// where ST_DWithin(states."location", ST_SetSRID(ST_MakePoint(105.834160, 21.027763), 4326), 1)
+// order by ST_Distance(states."location", ST_SetSRID(ST_MakePoint(105.834160, 21.027763), 4326));

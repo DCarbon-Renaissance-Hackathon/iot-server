@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -50,7 +51,7 @@ func (a2 *A2M) HandlerFunc(r *gin.Context) {
 	var authToken = r.GetHeader("Authorization")
 	var idx = strings.Index(authToken, "Bearer ")
 	if idx != 0 && len(authToken) < 10 {
-		r.AbortWithError(http.StatusUnauthorized, models.ErrorUnauthorized)
+		r.AbortWithError(http.StatusUnauthorized, dmodels.ErrorUnauthorized)
 		return
 	}
 
@@ -58,13 +59,13 @@ func (a2 *A2M) HandlerFunc(r *gin.Context) {
 	var user, err = DecodeJWT(a2.jwtKey, tokenStr)
 	if nil != err {
 		fmt.Println("Decode jwt error: ", err)
-		r.AbortWithError(http.StatusUnauthorized, models.ErrorUnauthorized)
+		r.AbortWithError(http.StatusUnauthorized, dmodels.ErrorUnauthorized)
 		return
 	}
 
 	err = hasPerm(user.Role, a2.perm)
 	if nil != err {
-		r.AbortWithError(http.StatusForbidden, models.ErrorPermissionDenied)
+		r.AbortWithError(http.StatusForbidden, dmodels.ErrorPermissionDenied)
 		return
 	}
 
@@ -83,11 +84,11 @@ func DecodeJWT(key string, token string) (*ClaimModel, error) {
 		},
 	)
 	if nil != err {
-		return nil, models.NewError(models.ECodeUnauthorized, err.Error())
+		return nil, dmodels.NewError(dmodels.ECodeUnauthorized, err.Error())
 	}
 
 	if !jtoken.Valid {
-		return nil, models.NewError(models.ECodeUnauthorized, "token is invalid")
+		return nil, dmodels.NewError(dmodels.ECodeUnauthorized, "token is invalid")
 	}
 
 	return claim.ClaimModel, nil
@@ -113,7 +114,7 @@ func EncodeJWT(key string, user *models.User, duration int64) (string, error) {
 func GetAuth(ctx context.Context) (*ClaimModel, error) {
 	var user = ctx.Value(ctxKey).(*ClaimModel)
 	if nil == user {
-		return nil, models.ErrorUnauthorized
+		return nil, dmodels.ErrorUnauthorized
 	}
 	return user, nil
 }
@@ -131,5 +132,5 @@ func hasPerm(role string, perm string) error {
 	if nil != tbl && tbl[perm] {
 		return nil
 	}
-	return models.ErrorPermissionDenied
+	return dmodels.ErrorPermissionDenied
 }

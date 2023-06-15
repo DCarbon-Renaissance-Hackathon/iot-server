@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/Dcarbon/go-shared/libs/broker/publisher"
+	"github.com/Dcarbon/go-shared/libs/broker"
 	"github.com/Dcarbon/go-shared/libs/dbutils"
 	"github.com/Dcarbon/go-shared/libs/rabbit"
 	"github.com/Dcarbon/go-shared/libs/utils"
@@ -92,12 +92,12 @@ func GetRabbitMQ() rabbit.IConnection {
 	return singRabbit
 }
 
-func GetRabbitPusher() publisher.IPublisher {
+func GetRabbitPusher() broker.IPublisher {
 	var rbConn = GetRabbitMQ()
 
 	rbChan, err := rbConn.Channel()
 	utils.PanicError("", err)
 
-	var pusher = publisher.NewDirectPusher(rbChan)
+	var pusher = broker.NewDirectPusher(rbChan)
 	return pusher
 }

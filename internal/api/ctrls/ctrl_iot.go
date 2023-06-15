@@ -4,7 +4,8 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/Dcarbon/go-shared/libs/broker"
+	"github.com/Dcarbon/go-shared/dmodels"
+	"github.com/Dcarbon/go-shared/edef"
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/go-shared/libs/utils"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
@@ -18,7 +19,7 @@ type IotCtrl struct {
 	separator *esign.TypedDataDomain // Domain seperator
 	iot       domain.IIot
 	sensor    domain.ISensor
-	pusher    *broker.IOTEvent
+	pusher    *edef.IOTEvent
 }
 
 func NewIotCtrl(typedDomain *esign.TypedDataDomain,
@@ -45,7 +46,7 @@ func NewIotCtrl(typedDomain *esign.TypedDataDomain,
 	var ctrl = &IotCtrl{
 		iot:       irepo,
 		separator: typedDomain,
-		pusher:    broker.NewIOTEvent(rss.GetRabbitPusher()),
+		pusher:    edef.NewIOTEvent(rss.GetRabbitPusher()),
 	}
 	return ctrl, nil
 }
@@ -71,7 +72,7 @@ func (ctrl *IotCtrl) Create(r *gin.Context) {
 	var payload = &domain.RIotCreate{}
 	var err = r.Bind(payload)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest(err.Error()))
+		r.JSON(400, dmodels.ErrBadRequest(err.Error()))
 		return
 	}
 
@@ -83,11 +84,11 @@ func (ctrl *IotCtrl) Create(r *gin.Context) {
 
 	r.JSON(200, iot)
 	log.Println("Publish iot created")
-	ctrl.pusher.PushIOTCreate(&broker.EventIOTCreate{
+	ctrl.pusher.PushIOTCreate(&edef.EventIOTCreate{
 		ID:      iot.ID,
-		Status:  broker.DeviceStatus(iot.Status),
+		Status:  dmodels.DeviceStatus(iot.Status),
 		Address: string(iot.Address),
-		Location: &broker.GPS{
+		Location: &edef.GPS{
 			Lng: iot.Position.Lng,
 			Lat: iot.Position.Lat,
 		},
@@ -109,7 +110,7 @@ func (ctrl *IotCtrl) Create(r *gin.Context) {
 func (ctrl *IotCtrl) GetIot(r *gin.Context) {
 	iotId, err := strconv.Atoi(r.Param("iotId"))
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Invalid iot id (Must be integer)"))
+		r.JSON(400, dmodels.ErrBadRequest("Invalid iot id (Must be integer)"))
 		return
 	}
 
@@ -137,13 +138,13 @@ func (ctrl *IotCtrl) ChangeStatus(r *gin.Context) {
 	var payload = &domain.RIotChangeStatus{}
 	var err = r.Bind(payload)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest(err.Error()))
+		r.JSON(400, dmodels.ErrBadRequest(err.Error()))
 		return
 	}
 
 	iotId, err := strconv.Atoi(r.Param("iotId"))
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Invalid iot id (Must be integer)"))
+		r.JSON(400, dmodels.ErrBadRequest("Invalid iot id (Must be integer)"))
 		return
 	}
 
@@ -175,9 +176,9 @@ func (ctrl *IotCtrl) ChangeStatus(r *gin.Context) {
 	}
 
 	r.JSON(200, iot)
-	ctrl.pusher.PushIOTChangeStatus(&broker.EventIOTChangeStatus{
+	ctrl.pusher.PushIOTChangeStatus(&edef.EventIOTChangeStatus{
 		ID:     iot.ID,
-		Status: broker.DeviceStatus(iot.Status),
+		Status: dmodels.DeviceStatus(iot.Status),
 	})
 
 }
@@ -198,23 +199,23 @@ func (ctrl *IotCtrl) ChangeStatus(r *gin.Context) {
 func (ctrl *IotCtrl) GetByBB(r *gin.Context) {
 	minLng, err := strconv.ParseFloat(r.Query("minLng"), 64)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Min longitude must be double"))
+		r.JSON(400, dmodels.ErrBadRequest("Min longitude must be double"))
 		return
 	}
 	minLat, err := strconv.ParseFloat(r.Query("minLat"), 64)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Min latitude must be double"))
+		r.JSON(400, dmodels.ErrBadRequest("Min latitude must be double"))
 		return
 	}
 
 	maxLng, err := strconv.ParseFloat(r.Query("maxLng"), 64)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Min longitude must be double"))
+		r.JSON(400, dmodels.ErrBadRequest("Min longitude must be double"))
 		return
 	}
 	maxLat, err := strconv.ParseFloat(r.Query("maxLat"), 64)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Min latitude must be double"))
+		r.JSON(400, dmodels.ErrBadRequest("Min latitude must be double"))
 		return
 	}
 
@@ -251,7 +252,7 @@ func (ctrl *IotCtrl) CreateMint(r *gin.Context) {
 	var mint = &models.MintSign{}
 	var err = r.BindJSON(mint)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Payload must be json: "+err.Error()))
+		r.JSON(400, dmodels.ErrBadRequest("Payload must be json: "+err.Error()))
 		return
 	}
 
@@ -280,18 +281,18 @@ func (ctrl *IotCtrl) CreateMint(r *gin.Context) {
 func (ctrl *IotCtrl) GetMintSigns(r *gin.Context) {
 	iotId, err := strconv.ParseInt(r.Param("iotId"), 10, 64)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Invalid iot id (Must be integer)"))
+		r.JSON(400, dmodels.ErrBadRequest("Invalid iot id (Must be integer)"))
 		return
 	}
 	from, err := strconv.ParseInt(r.Query("from"), 10, 64)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Missing duration start"))
+		r.JSON(400, dmodels.ErrBadRequest("Missing duration start"))
 		return
 	}
 
 	to, err := strconv.ParseInt(r.Query("to"), 10, 64)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Missing duration start"))
+		r.JSON(400, dmodels.ErrBadRequest("Missing duration start"))
 		return
 	}
 
@@ -341,13 +342,13 @@ func (ctrl *IotCtrl) GetIOTRepo() domain.IIot {
 // @Param        iotAddr	path			string				true	"IOT address"
 // @Param        payload	body			models.Metric		true	"Metric payload"
 // @Success      200		{object}		models.Metric
-// @Failure      400		{object}		models.Error
+// @Failure      400		{object}		dmodels.Error
 // @Router       /iots/{iotAddr}/metrics 	[post]
 // func (ctrl *IotCtrl) CreateMetric(r *gin.Context) {
 // 	var payload = &models.Metric{}
 // 	var err = r.BindJSON(payload)
 // 	if nil != err {
-// 		r.JSON(400, models.ErrBadRequest("Payload must be json: "+err.Error()))
+// 		r.JSON(400, dmodels.ErrBadRequest("Payload must be json: "+err.Error()))
 // 		return
 // 	}
 
@@ -382,13 +383,13 @@ func (ctrl *IotCtrl) GetIOTRepo() domain.IIot {
 // func (ctrl *IotCtrl) GetMetrics(r *gin.Context) {
 // 	from, err := strconv.ParseInt(r.Query("from"), 10, 64)
 // 	if nil != err {
-// 		r.JSON(400, models.ErrQueryParam("from must be int"))
+// 		r.JSON(400, dmodels.ErrQueryParam("from must be int"))
 // 		return
 // 	}
 
 // 	to, err := strconv.ParseInt(r.Query("to"), 10, 64)
 // 	if nil != err {
-// 		r.JSON(400, models.ErrQueryParam("to must be int"))
+// 		r.JSON(400, dmodels.ErrQueryParam("to must be int"))
 // 		return
 // 	}
 
@@ -411,15 +412,15 @@ func (ctrl *IotCtrl) GetIOTRepo() domain.IIot {
 // @Param			iotAddr			path				string  true  "IOT address"
 // @Param			metricId		path				string  true  "Metric id"
 // @Success			200				{object}			models.Metric
-// @Failure			400				{object}			models.Error
-// @Failure			404				{object}			models.Error
-// @Failure			500				{object}			models.Error
+// @Failure			400				{object}			dmodels.Error
+// @Failure			404				{object}			dmodels.Error
+// @Failure			500				{object}			dmodels.Error
 // @Router			/iots/{iotAddr}/metrics/{metricId} [get]
 // func (ctrl *IotCtrl) GetRawMetric(r *gin.Context) {
 // 	var iotAddr = r.Param("iotAddr")
 // 	var metricId = r.Param("metricId")
 // 	if iotAddr == "" || metricId == "" {
-// 		r.JSON(500, models.ErrBadRequest("Missing metric id "))
+// 		r.JSON(500, dmodels.ErrBadRequest("Missing metric id "))
 // 		return
 // 	}
 
@@ -447,13 +448,13 @@ func (ctrl *IotCtrl) GetIOTRepo() domain.IIot {
 // func (ctrl *IotCtrl) GetTT(r *gin.Context) {
 // 	var iotAddress = r.Param("iotAddr")
 // 	if iotAddress == "" {
-// 		r.JSON(400, models.ErrBadRequest("Missing iot address"))
+// 		r.JSON(400, dmodels.ErrBadRequest("Missing iot address"))
 // 		return
 // 	}
 
 // 	var fromNonce, err = strconv.ParseInt(r.Query("fromNonce"), 10, 64)
 // 	if nil != err {
-// 		r.JSON(400, models.ErrBadRequest("Missing iot nonce"))
+// 		r.JSON(400, dmodels.ErrBadRequest("Missing iot nonce"))
 // 		return
 // 	}
 

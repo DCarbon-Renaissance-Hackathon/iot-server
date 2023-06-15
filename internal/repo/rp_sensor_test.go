@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/go-shared/libs/utils"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
@@ -17,13 +18,13 @@ var iotTestSensors = []*models.IOTDevice{
 		Project: 1,
 		Type:    models.IOTTypeBurnMethane,
 		Address: "0xE445517AbB524002Bb04C96F96aBb87b8B19b53d",
-		Status:  models.DeviceStatusSuccess,
+		Status:  dmodels.DeviceStatusSuccess,
 	},
 	{
 		ID:      2,
 		Project: 2,
 		Type:    models.IOTTypeFertilizer,
-		Status:  models.DeviceStatusSuccess,
+		Status:  dmodels.DeviceStatusSuccess,
 		Address: "0x19Adf96848504a06383b47aAA9BbBC6638E81afD",
 	},
 }
@@ -55,7 +56,7 @@ func TestSensorCreate(t *testing.T) {
 	for _, it := range addrs {
 		_, err := sensorImpl.CreateSensor(&domain.RCreateSensor{
 			IotID:   iotTestSensors[0].ID,
-			Type:    models.SensorTypePower,
+			Type:    dmodels.SensorTypePower,
 			Address: it,
 		})
 		utils.PanicError("", err)
@@ -66,7 +67,7 @@ func TestSensorCreate2(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		_, err := sensorImpl.CreateSensor(&domain.RCreateSensor{
 			IotID: iotTestSensors[1].ID,
-			Type:  models.SensorTypePower,
+			Type:  dmodels.SensorTypePower,
 			// CreatedAt: time.Now(),
 		})
 		utils.PanicError("", err)
@@ -76,7 +77,7 @@ func TestSensorCreate2(t *testing.T) {
 func TestSensorChangeStatus(t *testing.T) {
 	sensor, err := sensorImpl.ChangeSensorStatus(&domain.RChangeSensorStatus{
 		ID:     31,
-		Status: models.DeviceStatusSuccess,
+		Status: dmodels.DeviceStatusSuccess,
 	})
 	utils.PanicError("", err)
 	utils.Dump("Changed sensor", sensor)

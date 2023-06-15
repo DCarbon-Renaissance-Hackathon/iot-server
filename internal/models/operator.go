@@ -1,5 +1,7 @@
 package models
 
+import "github.com/Dcarbon/go-shared/dmodels"
+
 type OpIotStatus struct {
 	Id      int64      `json:"id,omitempty"`      // Iot id
 	Address EthAddress `json:"address,omitempty"` // Iot address
@@ -8,8 +10,8 @@ type OpIotStatus struct {
 }
 
 type OpSensorMetric struct {
-	Id     int64      `json:"id,omitempty"`
-	Type   SensorType `json:"type,omitempty"`
-	Metric *AllMetric `json:"metric,omitempty"`
-	Latest int64      `json:"latest,omitempty"`
+	Id     int64              `json:"id,omitempty"`
+	Type   dmodels.SensorType `json:"type,omitempty"`
+	Metric *AllMetric         `json:"metric,omitempty"`
+	Latest int64              `json:"latest,omitempty"`
 }

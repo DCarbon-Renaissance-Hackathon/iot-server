@@ -12,6 +12,8 @@ import (
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "github.com/Dcarbon/go-shared/dmodels"
 )
 
 var config = routers.Config{
@@ -51,4 +53,7 @@ func main() {
 	if nil != err {
 		log.Println("Listen and serve error: ", err)
 	}
+}
+
+func Print() {
 }

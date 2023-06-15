@@ -1,6 +1,9 @@
 package domain
 
-import "github.com/Dcarbon/iott-cloud/internal/models"
+import (
+	"github.com/Dcarbon/go-shared/dmodels"
+	"github.com/Dcarbon/iott-cloud/internal/models"
+)
 
 type ROpSetStatus struct {
 	Id     int64           `json:"-"`      // Iot id
@@ -22,6 +25,6 @@ type IOperator interface {
 	SetStatus(req *ROpSetStatus) error
 	GetStatus(iotId int64) (*models.OpIotStatus, error)
 
-	ChangeMetrics(*RChangeMetric, models.SensorType) (*models.OpSensorMetric, error)
+	ChangeMetrics(*RChangeMetric, dmodels.SensorType) (*models.OpSensorMetric, error)
 	GetMetrics(iotId int64) (*RsGetMetrics, error)
 }

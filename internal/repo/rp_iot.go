@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
@@ -42,13 +43,13 @@ func (ip *iotRepo) Create(req *domain.RIotCreate) (*models.IOTDevice, error) {
 		Project:  req.Project,
 		Address:  req.Address,
 		Type:     req.Type,
-		Status:   models.DeviceStatusRegister,
+		Status:   dmodels.DeviceStatusRegister,
 		Position: *req.Position,
 	}
 
 	var err = ip.tblIOT().Create(iot).Error
 	if nil != err {
-		return nil, models.ParsePostgresError("IOT", err)
+		return nil, dmodels.ParsePostgresError("IOT", err)
 	}
 	return iot, nil
 }
@@ -63,7 +64,7 @@ func (ip *iotRepo) ChangeStatus(req *domain.RIotChangeStatus,
 		Update("status", req.Status).
 		Error
 	if nil != err {
-		return nil, models.ParsePostgresError("IOT", err)
+		return nil, dmodels.ParsePostgresError("IOT", err)
 	}
 
 	return iot, err
@@ -73,7 +74,7 @@ func (ip *iotRepo) GetIOT(id int64) (*models.IOTDevice, error) {
 	var iot = &models.IOTDevice{}
 	var err = ip.tblIOT().Where("id = ?", id).First(iot).Error
 	if nil != err {
-		return iot, models.ParsePostgresError("IOT", err)
+		return iot, dmodels.ParsePostgresError("IOT", err)
 	}
 	return iot, nil
 }
@@ -82,7 +83,7 @@ func (ip *iotRepo) GetIOTByAddress(addr models.EthAddress) (*models.IOTDevice, e
 	var iot = &models.IOTDevice{}
 	var err = ip.tblIOT().Where("address = ?", &addr).First(iot).Error
 	if nil != err {
-		return iot, models.ParsePostgresError("IOT", err)
+		return iot, dmodels.ParsePostgresError("IOT", err)
 	}
 
 	return iot, nil
@@ -97,17 +98,17 @@ func (ip *iotRepo) GetByBB(min, max *models.Point4326,
 			min.Lng, min.Lat, max.Lng, max.Lat,
 		).
 		Find(&iots).Error
-	return iots, models.ParsePostgresError("IOT", err)
+	return iots, dmodels.ParsePostgresError("IOT", err)
 }
 
-func (ip *iotRepo) GetIOTStatus(iotAddr string) models.DeviceStatus {
+func (ip *iotRepo) GetIOTStatus(iotAddr string) dmodels.DeviceStatus {
 	var device = &models.IOTDevice{}
 	var err = ip.tblIOT().
 		Select("status").
 		Where("address = ?", strings.ToLower(iotAddr)).
 		First(&device).Error
 	if nil != err {
-		device.Status = models.DeviceStatusReject
+		device.Status = dmodels.DeviceStatusReject
 	}
 	return device.Status
 }
@@ -121,8 +122,8 @@ func (ip *iotRepo) CreateMint(mint *models.MintSign,
 		return err
 	}
 
-	if iot.Status < models.DeviceStatusRegister {
-		return models.NewError(models.ECodeIOTNotAllowed, "IOT is not allow")
+	if iot.Status < dmodels.DeviceStatusRegister {
+		return dmodels.NewError(dmodels.ECodeIOTNotAllowed, "IOT is not allow")
 	}
 
 	err = mint.Verify(ip.dMinter)
@@ -137,17 +138,17 @@ func (ip *iotRepo) CreateMint(mint *models.MintSign,
 		Limit(1).
 		Find(&latest).Error
 	if nil != err {
-		return models.ParsePostgresError("", err)
+		return dmodels.ParsePostgresError("", err)
 	}
 
 	if len(latest) == 0 {
 		if mint.Nonce != 1 {
-			return models.NewError(
-				models.ECodeIOTInvalidNonce,
+			return dmodels.NewError(
+				dmodels.ECodeIOTInvalidNonce,
 				"Nonce is not valid",
 			)
 		}
-		err = models.ParsePostgresError("", ip.tblSign().Create(mint).Error)
+		err = dmodels.ParsePostgresError("", ip.tblSign().Create(mint).Error)
 	} else if latest[0].Nonce == mint.Nonce {
 		err = ip.tblSign().
 			Where("id = ?", latest[0].ID).
@@ -159,11 +160,11 @@ func (ip *iotRepo) CreateMint(mint *models.MintSign,
 				"v":          mint.V,
 				"updated_at": time.Now(),
 			}).Error
-		err = models.ParsePostgresError("", err)
+		err = dmodels.ParsePostgresError("", err)
 	} else if latest[0].Nonce+1 == mint.Nonce {
-		err = models.ParsePostgresError("", ip.tblSign().Create(mint).Error)
+		err = dmodels.ParsePostgresError("", ip.tblSign().Create(mint).Error)
 	} else {
-		err = models.NewError(models.ECodeIOTInvalidNonce, "Invalid nonce")
+		err = dmodels.NewError(dmodels.ECodeIOTInvalidNonce, "Invalid nonce")
 	}
 
 	return err
@@ -186,7 +187,7 @@ func (ip *iotRepo) GetMintSigns(req *domain.RIotGetMintSignList,
 		Find(&signeds).
 		Error
 	if nil != err {
-		return nil, models.ParsePostgresError("Get mint sign", err)
+		return nil, dmodels.ParsePostgresError("Get mint sign", err)
 	}
 	return signeds, nil
 }

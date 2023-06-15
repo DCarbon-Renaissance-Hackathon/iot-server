@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/go-shared/libs/dbutils"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
@@ -32,7 +33,7 @@ func NewProposalRepo(dbUrl string) (domain.IProposal, error) {
 
 func (pRepo *ProposalRepo) Create(v *models.Proposal) error {
 	err := pRepo.tblProposal().Create(v).Error
-	return models.ParsePostgresError("Proposal", err)
+	return dmodels.ParsePostgresError("Proposal", err)
 }
 
 func (pRepo *ProposalRepo) GetList(skip, limit, iotId, projectId int64,
@@ -55,7 +56,7 @@ func (pRepo *ProposalRepo) GetList(skip, limit, iotId, projectId int64,
 	}
 	var data = make([]*models.Proposal, 0, limit)
 	var err = tbl.Find(&data).Error
-	return data, models.ParsePostgresError("Proposal", err)
+	return data, dmodels.ParsePostgresError("Proposal", err)
 }
 
 func (pRepo *ProposalRepo) tblProposal() *gorm.DB {

@@ -1,6 +1,9 @@
 package domain
 
-import "github.com/Dcarbon/iott-cloud/internal/models"
+import (
+	"github.com/Dcarbon/go-shared/dmodels"
+	"github.com/Dcarbon/iott-cloud/internal/models"
+)
 
 type RIotCreate struct {
 	Project  int64             `json:"project" binding:"required"`
@@ -10,8 +13,8 @@ type RIotCreate struct {
 } //@name RIotCreate
 
 type RIotChangeStatus struct {
-	IotId  int64                `json:"iotId" form:"iotId" binding:"required"`
-	Status *models.DeviceStatus `json:"status" form:"status" binding:"required"`
+	IotId  int64                 `json:"iotId" form:"iotId" binding:"required"`
+	Status *dmodels.DeviceStatus `json:"status" form:"status" binding:"required"`
 } //@name RIotChangeStatus
 
 type RIotGetMintSignList struct {

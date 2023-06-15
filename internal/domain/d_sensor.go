@@ -3,6 +3,7 @@ package domain
 import (
 	"time"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/iott-cloud/internal/models"
 )
 
@@ -13,24 +14,24 @@ type SensorID struct {
 }
 
 type Metric struct {
-	ID         string            `json:"id"`
-	IotId      int64             `json:"iotId"`
-	SensorId   int64             `json:"sensorId"`
-	SensorType models.SensorType `json:"sensorType"`
-	Indicator  *models.AllMetric `json:"indicator"`
-	Data       string            `json:"data"`
-	CreatedAt  time.Time         `json:"createdAt"`
+	ID         string             `json:"id"`
+	IotId      int64              `json:"iotId"`
+	SensorId   int64              `json:"sensorId"`
+	SensorType dmodels.SensorType `json:"sensorType"`
+	Indicator  *models.AllMetric  `json:"indicator"`
+	Data       string             `json:"data"`
+	CreatedAt  time.Time          `json:"createdAt"`
 }
 
 type RCreateSensor struct {
-	IotID   int64             `json:"iotId"`
-	Type    models.SensorType `json:"type"`    // CH4, KW, MW, ...
-	Address models.EthAddress `json:"address"` // Sensor address
+	IotID   int64              `json:"iotId"`
+	Type    dmodels.SensorType `json:"type"`    // CH4, KW, MW, ...
+	Address models.EthAddress  `json:"address"` // Sensor address
 } //@name RCreateSensor
 
 type RChangeSensorStatus struct {
-	ID     int64               `json:"id"`     // Sensor id
-	Status models.DeviceStatus `json:"status"` //
+	ID     int64                `json:"id"`     // Sensor id
+	Status dmodels.DeviceStatus `json:"status"` //
 }
 
 // type RGetSensor struct {
@@ -74,7 +75,7 @@ type ISensor interface {
 	ChangeSensorStatus(*RChangeSensorStatus) (*models.Sensor, error)
 	GetSensor(*SensorID) (*models.Sensor, error)
 	GetSensors(*RGetSensors) ([]*models.Sensor, error)
-	GetSensorType(req *SensorID) (models.SensorType, error)
+	GetSensorType(req *SensorID) (dmodels.SensorType, error)
 
 	CreateSM(*RCreateSM) (*models.SmSignature, error)
 	CreateSMFromIot(*RCreateSMFromIOT) (*models.SmSignature, error)

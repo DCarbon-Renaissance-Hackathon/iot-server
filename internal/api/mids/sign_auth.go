@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
-	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/net/context"
 )
@@ -25,7 +25,7 @@ func (sa *SignedAuth) HandlerFunc(r *gin.Context) {
 	var authToken = r.GetHeader("Authorization")
 	var idx = strings.Index(authToken, "Bearer ")
 	if idx != 0 && len(authToken) < 10 {
-		r.AbortWithError(http.StatusUnauthorized, models.ErrorUnauthorized)
+		r.AbortWithError(http.StatusUnauthorized, dmodels.ErrorUnauthorized)
 		return
 	}
 
@@ -35,7 +35,7 @@ func (sa *SignedAuth) HandlerFunc(r *gin.Context) {
 	if nil != err {
 		r.AbortWithError(
 			http.StatusUnauthorized,
-			models.NewError(models.ECodeUnauthorized, "Invalid sign token. It must be sign verify"),
+			dmodels.NewError(dmodels.ECodeUnauthorized, "Invalid sign token. It must be sign verify"),
 		)
 		return
 	}
@@ -47,7 +47,7 @@ func (sa *SignedAuth) HandlerFunc(r *gin.Context) {
 func GetSignAuth(ctx context.Context) (*domain.SignedToken, error) {
 	var auth = ctx.Value(ctxKey).(*domain.SignedToken)
 	if nil == auth {
-		return nil, models.ErrorUnauthorized
+		return nil, dmodels.ErrorUnauthorized
 	}
 	return auth, nil
 }

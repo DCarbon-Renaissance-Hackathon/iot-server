@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
@@ -33,12 +34,12 @@ func (up *userRepo) Login(addr models.EthAddress, signedHex, org string,
 ) (*models.User, error) {
 	var signedBytes, err = hexutil.Decode(signedHex)
 	if nil != err {
-		return nil, models.ErrBadRequest("Invalid sign " + err.Error())
+		return nil, dmodels.ErrBadRequest("Invalid sign " + err.Error())
 	}
 
 	err = esign.VerifyPersonalSign(string(addr), []byte(org), signedBytes)
 	if nil != err {
-		return nil, models.ErrBadRequest("Invalid signed" + err.Error())
+		return nil, dmodels.ErrBadRequest("Invalid signed" + err.Error())
 	}
 
 	var user = &models.User{
@@ -51,10 +52,10 @@ func (up *userRepo) Login(addr models.EthAddress, signedHex, org string,
 		if err == gorm.ErrRecordNotFound {
 			err = up.tblUser().Create(user).Error
 			if nil != err {
-				return nil, models.ParsePostgresError("User", err)
+				return nil, dmodels.ParsePostgresError("User", err)
 			}
 		} else {
-			return nil, models.ParsePostgresError("User", err)
+			return nil, dmodels.ParsePostgresError("User", err)
 		}
 
 	}
@@ -70,7 +71,7 @@ func (up *userRepo) Update(id int64, name string) (*models.User, error) {
 		Where("id = ?", id).
 		Update("name = ?", name).
 		Error
-	return user, models.ParsePostgresError("User", err)
+	return user, dmodels.ParsePostgresError("User", err)
 }
 
 func (up *userRepo) GetUserById(id int64) (*models.User, error) {
@@ -79,7 +80,7 @@ func (up *userRepo) GetUserById(id int64) (*models.User, error) {
 		Where("id = ?", id).
 		First(user).Error
 
-	return user, models.ParsePostgresError("User", err)
+	return user, dmodels.ParsePostgresError("User", err)
 }
 
 func (up *userRepo) GetUserByAddress(addr string) (*models.User, error) {
@@ -88,7 +89,7 @@ func (up *userRepo) GetUserByAddress(addr string) (*models.User, error) {
 		Where("address = ?", addr).
 		First(user).Error
 
-	return user, models.ParsePostgresError("User", err)
+	return user, dmodels.ParsePostgresError("User", err)
 }
 
 func (up *userRepo) tblUser() *gorm.DB {

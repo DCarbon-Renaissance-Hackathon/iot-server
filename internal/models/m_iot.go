@@ -1,5 +1,7 @@
 package models
 
+import "github.com/Dcarbon/go-shared/dmodels"
+
 type IOTType int
 
 const (
@@ -21,12 +23,12 @@ const (
 )
 
 type IOTDevice struct {
-	ID       int64        `json:"id" gorm:"primary_key"`
-	Project  int64        `json:"project" `
-	Address  EthAddress   `json:"address" gorm:"unique"`
-	Type     IOTType      `json:"type" `
-	Status   DeviceStatus `json:"status"`
-	Position Point4326    `json:"position" gorm:"type:geometry(POINT, 4326)"`
+	ID       int64                `json:"id" gorm:"primary_key"`
+	Project  int64                `json:"project" `
+	Address  EthAddress           `json:"address" gorm:"unique"`
+	Type     IOTType              `json:"type" `
+	Status   dmodels.DeviceStatus `json:"status"`
+	Position Point4326            `json:"position" gorm:"type:geometry(POINT, 4326)"`
 } // @name IOTDevice
 
 func (*IOTDevice) TableName() string { return TableNameIOT }

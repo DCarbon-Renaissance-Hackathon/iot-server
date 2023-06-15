@@ -1,116 +1,108 @@
 package models
 
-import (
-	"fmt"
-	"log"
-	"strings"
+// type ECode int
 
-	"gorm.io/gorm"
-)
+// const (
+// 	// Common error
+// 	ECodeBadRequest        ECode = 40000
+// 	ECodeUnauthorized      ECode = 40001
+// 	ECodePermissionDenied  ECode = 40003
+// 	ECodeNotExisted        ECode = 40004
+// 	ECodeExisted           ECode = 40005
+// 	ECodeQueryParamInvalid ECode = 40006
+// 	ECodeInvalidSignature  ECode = 40007
+// 	ECodeAddressIsEmpty    ECode = 40008
 
-type ECode int // @name ECode
+// 	// Project error
 
-const (
-	// Common error
-	ECodeBadRequest        ECode = 40000
-	ECodeUnauthorized      ECode = 40001
-	ECodePermissionDenied  ECode = 40003
-	ECodeNotExisted        ECode = 40004
-	ECodeExisted           ECode = 40005
-	ECodeQueryParamInvalid ECode = 40006
-	ECodeInvalidSignature  ECode = 40007
-	ECodeAddressIsEmpty    ECode = 40008
+// 	// IOT error
+// 	ECodeIOTNotAllowed      ECode = 41000
+// 	ECodeIOTInvalidNonce    ECode = 41001
+// 	ECodeIOTInvalidMintSign ECode = 41002
 
-	// Project error
+// 	// Sensor error
+// 	ECodeSensorNotAllowed      ECode = 41100
+// 	ECodeSensorInvalidNonce    ECode = 41101
+// 	ECodeSensorInvalidMintSign ECode = 41102
+// 	ECodeSensorInvalidMetric   ECode = 41103
+// 	ECodeSensorInvalidType     ECode = 41104
+// 	ECodeSensorHasNoAddress    ECode = 41105
+// 	ECodeSensorHasAddress      ECode = 41106
+// )
 
-	// IOT error
-	ECodeIOTNotAllowed      ECode = 41000
-	ECodeIOTInvalidNonce    ECode = 41001
-	ECodeIOTInvalidMintSign ECode = 41002
+// const (
+// 	ECodeInternal     = 50000
+// 	ECodeNotImplement = 50001
+// )
 
-	// Sensor error
-	ECodeSensorNotAllowed      ECode = 41100
-	ECodeSensorInvalidNonce    ECode = 41101
-	ECodeSensorInvalidMintSign ECode = 41102
-	ECodeSensorInvalidMetric   ECode = 41103
-	ECodeSensorInvalidType     ECode = 41104
-	ECodeSensorHasNoAddress    ECode = 41105
-	ECodeSensorHasAddress      ECode = 41106
-)
+// var (
+// 	ErrorUnauthorized     = NewError(ECodeUnauthorized, "")
+// 	ErrorPermissionDenied = NewError(ECodePermissionDenied, "")
+// )
 
-const (
-	ECodeInternal     = 50000
-	ECodeNotImplement = 50001
-)
+// type Error struct {
+// 	Code    ECode  `json:"code"`
+// 	Message string `json:"message"`
+// }
 
-var (
-	ErrorUnauthorized     = NewError(ECodeUnauthorized, "")
-	ErrorPermissionDenied = NewError(ECodePermissionDenied, "")
-)
+// func NewError(code ECode, msg string) error {
+// 	var err = &Error{
+// 		Code:    code,
+// 		Message: msg,
+// 	}
+// 	return err
+// }
 
-type Error struct {
-	Code    ECode  `json:"code"`
-	Message string `json:"message"`
-} //@name Error
+// func (err *Error) Error() string {
+// 	return fmt.Sprintf("Code:%d Message:%s", err.Code, err.Message)
+// }
 
-func NewError(code ECode, msg string) error {
-	var err = &Error{
-		Code:    code,
-		Message: msg,
-	}
-	return err
-}
+// func (err Error) String() string {
+// 	return fmt.Sprintf("Code:%d Message:%s", err.Code, err.Message)
+// }
 
-func (err *Error) Error() string {
-	return fmt.Sprintf("Code:%d Message:%s", err.Code, err.Message)
-}
+// func ParsePostgresError(label string, err error) error {
+// 	if nil == err {
+// 		return nil
+// 	}
+// 	log.Println("Postgres error: ", err)
+// 	if err == gorm.ErrRecordNotFound {
+// 		return NewError(
+// 			ECodeNotExisted,
+// 			label+" is not existed",
+// 		)
+// 	}
 
-func (err Error) String() string {
-	return fmt.Sprintf("Code:%d Message:%s", err.Code, err.Message)
-}
+// 	if strings.Contains(err.Error(), "duplicate") {
+// 		return NewError(
+// 			ECodeExisted,
+// 			label+" is existed",
+// 		)
+// 	}
+// 	return ErrInternal(err)
+// }
 
-func ParsePostgresError(label string, err error) error {
-	if nil == err {
-		return nil
-	}
-	log.Println("Postgres error: ", err)
-	if err == gorm.ErrRecordNotFound {
-		return NewError(
-			ECodeNotExisted,
-			label+" is not existed",
-		)
-	}
+// // ErrInternal :
+// func ErrInternal(err error) error {
+// 	if nil == err {
+// 		return nil
+// 	}
+// 	log.Println("Internal error: ", err)
+// 	return NewError(ECodeInternal, "internal error")
+// }
 
-	if strings.Contains(err.Error(), "duplicate") {
-		return NewError(
-			ECodeExisted,
-			label+" is existed",
-		)
-	}
-	return ErrInternal(err)
-}
+// // ErrInternal :
+// func ErrNotImplement() error {
+// 	return NewError(ECodeNotImplement, "not implement")
+// }
 
-// ErrInternal :
-func ErrInternal(err error) error {
-	if nil == err {
-		return nil
-	}
-	log.Println("Internal error: ", err)
-	return NewError(ECodeInternal, "internal error")
-}
+// // ErrInternal :
+// func ErrBadRequest(msg string) error {
+// 	// log.Println("Bad request error: ", err)
+// 	return NewError(ECodeBadRequest, msg)
+// }
 
-// ErrInternal :
-func ErrNotImplement() error {
-	return NewError(ECodeNotImplement, "not implement")
-}
-
-// ErrInternal :
-func ErrBadRequest(msg string) error {
-	// log.Println("Bad request error: ", err)
-	return NewError(ECodeBadRequest, msg)
-}
-
-// ErrInternal :
-func ErrQueryParam(msg string) error {
-	return NewError(ECodeQueryParamInvalid, msg)
-}
+// // ErrInternal :
+// func ErrQueryParam(msg string) error {
+// 	return NewError(ECodeQueryParamInvalid, msg)
+// }

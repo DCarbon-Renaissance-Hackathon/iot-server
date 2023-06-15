@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/rss"
@@ -37,7 +38,7 @@ func (op *OperatorRepo) SetStatus(req *domain.ROpSetStatus) error {
 	}
 	raw, err := json.Marshal(stt)
 	if nil != err {
-		return models.ErrInternal(err)
+		return dmodels.ErrInternal(err)
 	}
 
 	_, err = op.redis.HSet(
@@ -46,7 +47,7 @@ func (op *OperatorRepo) SetStatus(req *domain.ROpSetStatus) error {
 		fmt.Sprintf("%d", req.Id), string(raw),
 	).Result()
 	if nil != err {
-		return models.ErrInternal(err)
+		return dmodels.ErrInternal(err)
 	}
 
 	return nil
@@ -73,7 +74,7 @@ func (op *OperatorRepo) GetStatus(iotId int64) (*models.OpIotStatus, error) {
 	return stt, nil
 }
 
-func (op *OperatorRepo) ChangeMetrics(req *domain.RChangeMetric, sensorType models.SensorType,
+func (op *OperatorRepo) ChangeMetrics(req *domain.RChangeMetric, sensorType dmodels.SensorType,
 ) (*models.OpSensorMetric, error) {
 	var metric = &models.OpSensorMetric{
 		Id:     req.SensorId,
@@ -83,7 +84,7 @@ func (op *OperatorRepo) ChangeMetrics(req *domain.RChangeMetric, sensorType mode
 	}
 	var raw, err = json.Marshal(metric)
 	if nil != err {
-		return nil, models.ErrInternal(err)
+		return nil, dmodels.ErrInternal(err)
 	}
 
 	err = op.redis.HSet(
@@ -91,7 +92,7 @@ func (op *OperatorRepo) ChangeMetrics(req *domain.RChangeMetric, sensorType mode
 		fmt.Sprintf(keyIotMetric, req.IotId),
 		fmt.Sprintf("%d", req.SensorId), string(raw)).Err()
 	if nil != err {
-		return nil, models.ErrInternal(err)
+		return nil, dmodels.ErrInternal(err)
 	}
 
 	return metric, nil

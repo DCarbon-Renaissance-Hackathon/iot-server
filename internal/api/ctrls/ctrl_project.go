@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/go-shared/libs/sclient"
 	"github.com/Dcarbon/iott-cloud/internal/api/mids"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
@@ -62,7 +63,7 @@ func (ctrl *ProjectCtrl) Create(r *gin.Context) {
 	var payload = &domain.RProjectCreate{}
 	var err = r.Bind(payload)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Bind error: "+err.Error()))
+		r.JSON(400, dmodels.ErrBadRequest("Bind error: "+err.Error()))
 		return
 	}
 
@@ -92,7 +93,7 @@ func (ctrl *ProjectCtrl) UpdateDesc(r *gin.Context) {
 	var payload = &domain.RProjectUpdateDesc{}
 	var err = r.Bind(payload)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Bind error: "+err.Error()))
+		r.JSON(400, dmodels.ErrBadRequest("Bind error: "+err.Error()))
 		return
 	}
 
@@ -128,7 +129,7 @@ func (ctrl *ProjectCtrl) UpdateSpecs(r *gin.Context) {
 	var payload = &domain.RProjectUpdateSpecs{}
 	var err = r.Bind(payload)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Bind error: "+err.Error()))
+		r.JSON(400, dmodels.ErrBadRequest("Bind error: "+err.Error()))
 		return
 	}
 
@@ -164,7 +165,7 @@ func (ctrl *ProjectCtrl) UpdateSpecs(r *gin.Context) {
 func (ctrl *ProjectCtrl) AddImage(r *gin.Context) {
 	projectId, err := strconv.ParseInt(r.PostForm("projectId"), 10, 64)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Project id must be int"))
+		r.JSON(400, dmodels.ErrBadRequest("Project id must be int"))
 		return
 	}
 
@@ -176,7 +177,7 @@ func (ctrl *ProjectCtrl) AddImage(r *gin.Context) {
 
 	img, err := r.FormFile("image")
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Missing image"))
+		r.JSON(400, dmodels.ErrBadRequest("Missing image"))
 		return
 	}
 	os.MkdirAll(ctrl.dstTmp, 0777)
@@ -188,7 +189,7 @@ func (ctrl *ProjectCtrl) AddImage(r *gin.Context) {
 
 	err = r.SaveUploadedFile(img, fileName)
 	if nil != err {
-		r.JSON(400, models.ErrInternal(errors.New("missing image")))
+		r.JSON(400, dmodels.ErrInternal(errors.New("missing image")))
 		return
 	}
 	defer os.Remove(fileName)
@@ -226,7 +227,7 @@ func (ctrl *ProjectCtrl) AddImage(r *gin.Context) {
 func (ctrl *ProjectCtrl) GetByID(r *gin.Context) {
 	id, err := strconv.ParseInt(r.Param("projectId"), 10, 64)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("projectId must be int64"))
+		r.JSON(400, dmodels.ErrBadRequest("projectId must be int64"))
 		return
 	}
 
@@ -259,13 +260,13 @@ func (ctrl *ProjectCtrl) GetByID(r *gin.Context) {
 func (ctrl *ProjectCtrl) GetList(r *gin.Context) {
 	skip, err := strconv.ParseInt(r.DefaultQuery("skip", "0"), 10, 64)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("Skip must be int64"))
+		r.JSON(400, dmodels.ErrBadRequest("Skip must be int64"))
 		return
 	}
 
 	limit, err := strconv.ParseInt(r.DefaultQuery("skip", "0"), 10, 64)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest("limit must be int64"))
+		r.JSON(400, dmodels.ErrBadRequest("limit must be int64"))
 		return
 	}
 
@@ -292,9 +293,9 @@ func (ctrl *ProjectCtrl) GetList(r *gin.Context) {
 // @Param        payload	body						Project			true	"Project"
 // @Param        projectId	path  						string 			true	"Project id"
 // @Success      200		{array}						Project
-// @Failure      400		{object}					models.Error
-// @Failure      404		{object}					models.Error
-// @Failure      500		{object}					models.Error
+// @Failure      400		{object}					dmodels.Error
+// @Failure      404		{object}					dmodels.Error
+// @Failure      500		{object}					dmodels.Error
 // @Router       /projects/{projectId}/change-status 	[put]
 // func (ctrl *ProjectCtrl) ChangeStatus(r *gin.Context) {
 // }
@@ -303,7 +304,7 @@ func (ctrl *ProjectCtrl) isProjectOwner(r *gin.Context, projectId int64,
 ) error {
 	user, err := mids.GetAuth(r.Request.Context())
 	if nil != err {
-		return models.ErrInternal(errors.New("missing check authen in project add image"))
+		return dmodels.ErrInternal(errors.New("missing check authen in project add image"))
 	}
 
 	if user.Role == "super-admin" {
@@ -316,7 +317,7 @@ func (ctrl *ProjectCtrl) isProjectOwner(r *gin.Context, projectId int64,
 	}
 
 	if models.EthAddress(user.EthAddress) != models.EthAddress(owner) {
-		return models.ErrorPermissionDenied
+		return dmodels.ErrorPermissionDenied
 	}
 	return nil
 }

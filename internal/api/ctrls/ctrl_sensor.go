@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/repo"
@@ -49,13 +50,13 @@ func (ctrl *SensorCtrl) Create(r *gin.Context) {
 	var payload = &domain.RCreateSensor{}
 	var err = r.Bind(payload)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest(err.Error()))
+		r.JSON(400, dmodels.ErrBadRequest(err.Error()))
 		return
 	}
 
 	_, err = ctrl.iotRepo.GetIOT(payload.IotID)
 	if nil != err {
-		r.JSON(500, models.ErrBadRequest(err.Error()))
+		r.JSON(500, dmodels.ErrBadRequest(err.Error()))
 		return
 	}
 
@@ -84,7 +85,7 @@ func (ctrl *SensorCtrl) ChangeStatus(r *gin.Context) {
 	var payload = &domain.RChangeSensorStatus{}
 	var err = r.Bind(payload)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest(err.Error()))
+		r.JSON(400, dmodels.ErrBadRequest(err.Error()))
 	} else {
 		sensor, err := ctrl.sensorRepo.ChangeSensorStatus(payload)
 		if nil != err {
@@ -110,7 +111,7 @@ func (ctrl *SensorCtrl) ChangeStatus(r *gin.Context) {
 func (ctrl *SensorCtrl) GetSensor(r *gin.Context) {
 	var id, err = strconv.ParseInt(r.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
-		r.JSON(400, models.ErrBadRequest("Invalid sensor id "))
+		r.JSON(400, dmodels.ErrBadRequest("Invalid sensor id "))
 	} else {
 		sensor, err := ctrl.sensorRepo.GetSensor(&domain.SensorID{ID: id})
 		if nil != err {
@@ -183,14 +184,33 @@ func (ctrl *SensorCtrl) CreateSm(r *gin.Context) {
 	var payload = &domain.RCreateSM{}
 	var err = r.Bind(payload)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest(err.Error()))
+		r.JSON(400, dmodels.ErrBadRequest(err.Error()))
 		return
 	}
 
 	if payload.SensorAddress == "" || payload.Signed == "" || payload.Data == "" {
-		r.JSON(400, models.ErrBadRequest("Request missing param. Please check again"))
+		r.JSON(400, dmodels.ErrBadRequest("Request missing param. Please check again"))
 		return
 	}
+
+	// sensor, err := ctrl.sensorRepo.GetSensor(&domain.SensorID{Address: payload.SensorAddress})
+	// if nil != err {
+	// 	r.JSON(400, dmodels.ErrNotImplement("Request missing param. Please check again"))
+	// 	return
+	// }
+
+	// if sensor.Address.IsEmpty() {
+	// 	return nil, models.NewError(dmodels.ECodeSensorHasNoAddress, "SensorAddress is empty")
+	// }
+
+	// var signed = &models.SmSignature{
+	// 	ID:        uuid.NewV4().String(),
+	// 	IsIotSign: true,
+	// 	IotID:     sensor.IotID,
+	// 	SensorID:  sensor.ID,
+	// 	Data:      req.Data,
+	// 	Signed:    req.Signed,
+	// }
 
 	sensor, err := ctrl.sensorRepo.CreateSM(payload)
 	if nil != err {
@@ -217,12 +237,12 @@ func (ctrl *SensorCtrl) CreateSMByIOT(r *gin.Context) {
 	var payload = &domain.RCreateSMFromIOT{}
 	var err = r.Bind(payload)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest(err.Error()))
+		r.JSON(400, dmodels.ErrBadRequest(err.Error()))
 		return
 	}
 
 	if payload.IotAddress.IsEmpty() {
-		r.JSON(400, models.ErrBadRequest("Missing iot address"))
+		r.JSON(400, dmodels.ErrBadRequest("Missing iot address"))
 		return
 	}
 
@@ -262,7 +282,7 @@ func (ctrl *SensorCtrl) GetMetrics(r *gin.Context) {
 	var payload = &domain.RGetSM{}
 	var err = r.Bind(payload)
 	if nil != err {
-		r.JSON(400, models.ErrBadRequest(err.Error()))
+		r.JSON(400, dmodels.ErrBadRequest(err.Error()))
 		return
 	}
 
