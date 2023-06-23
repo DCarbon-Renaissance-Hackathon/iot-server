@@ -36,8 +36,8 @@ func TestChangeMetricsGPS(t *testing.T) {
 		&domain.RChangeMetric{
 			IotId:    1,
 			SensorId: 1,
-			Metric: &models.AllMetric{
-				GPSMetric: models.GPSMetric{
+			Metric: &dmodels.AllMetric{
+				GPSMetric: dmodels.GPSMetric{
 					Lat: 1,
 					Lng: 1,
 				},
@@ -53,8 +53,8 @@ func TestChangeMetricsPower(t *testing.T) {
 		&domain.RChangeMetric{
 			IotId:    1,
 			SensorId: 2,
-			Metric: &models.AllMetric{
-				DefaultMetric: models.DefaultMetric{
+			Metric: &dmodels.AllMetric{
+				DefaultMetric: dmodels.DefaultMetric{
 					Val: 0.5,
 				},
 			},

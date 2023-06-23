@@ -30,7 +30,7 @@ func NewUserRepo() (domain.IUser, error) {
 	return up, nil
 }
 
-func (up *userRepo) Login(addr models.EthAddress, signedHex, org string,
+func (up *userRepo) Login(addr dmodels.EthAddress, signedHex, org string,
 ) (*models.User, error) {
 	var signedBytes, err = hexutil.Decode(signedHex)
 	if nil != err {

@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/Dcarbon/go-shared/dmodels"
+)
 
 const (
 	RoleAdmin = "admin"
@@ -15,14 +19,14 @@ const (
 )
 
 type User struct {
-	ID        int64      `json:"id" gorm:"primary_key"` //
-	Role      string     `json:"role"`                  //
-	Name      string     `json:"name" `                 //
-	Address   EthAddress `json:"address" gorm:"unique"` // Eth address
-	TaxCode   string     `json:"taxCode"`
-	Phone     string     `json:"phone"`
-	Type      UserType   `json:"type"`
-	CreatedAt time.Time  `json:"-"`
+	ID        int64              `json:"id" gorm:"primary_key"` //
+	Role      string             `json:"role"`                  //
+	Name      string             `json:"name" `                 //
+	Address   dmodels.EthAddress `json:"address" gorm:"unique"` // Eth address
+	TaxCode   string             `json:"taxCode"`
+	Phone     string             `json:"phone"`
+	Type      UserType           `json:"type"`
+	CreatedAt time.Time          `json:"-"`
 }
 
 func (*User) TableName() string { return TableNameUser }

@@ -1,6 +1,8 @@
 package repo
 
 import (
+	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/rss"
+	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -24,6 +27,7 @@ func NewIOTRepo(dMinter *esign.ERC712,
 	err := db.AutoMigrate(
 		&models.IOTDevice{},
 		&models.MintSign{},
+		&models.Minted{},
 		// &models.Metric{},
 	)
 	if nil != err {
@@ -70,6 +74,25 @@ func (ip *iotRepo) ChangeStatus(req *domain.RIotChangeStatus,
 	return iot, err
 }
 
+func (ip *iotRepo) Update(req *domain.RIotUpdate,
+) (*models.IOTDevice, error) {
+	var iot = &models.IOTDevice{}
+	var err = ip.tblIOT().
+		Model(iot).
+		Clauses(clause.Returning{}).
+		Where("id = ?", req.IotId).
+		Updates(map[string]interface{}{
+			"position": req.Position,
+			// "updated_at": time.Now(),
+		}).
+		Error
+	if nil != err {
+		return nil, dmodels.ParsePostgresError("IOT", err)
+	}
+
+	return iot, err
+}
+
 func (ip *iotRepo) GetIOT(id int64) (*models.IOTDevice, error) {
 	var iot = &models.IOTDevice{}
 	var err = ip.tblIOT().Where("id = ?", id).First(iot).Error
@@ -79,9 +102,21 @@ func (ip *iotRepo) GetIOT(id int64) (*models.IOTDevice, error) {
 	return iot, nil
 }
 
-func (ip *iotRepo) GetIOTByAddress(addr models.EthAddress) (*models.IOTDevice, error) {
+func (ip *iotRepo) GetIotPositions(req *domain.RIotGetList) ([]*domain.PositionId, error) {
+	var locs = make([]*domain.PositionId, 0)
+	var err = ip.tblIOT().
+		Select("id, position").
+		Where("status = ?", req.Status).
+		Find(&locs).Error
+	if nil != err {
+		return nil, dmodels.ParsePostgresError("IOT", err)
+	}
+	return locs, nil
+}
+
+func (ip *iotRepo) GetIOTByAddress(addr dmodels.EthAddress) (*models.IOTDevice, error) {
 	var iot = &models.IOTDevice{}
-	var err = ip.tblIOT().Where("address = ?", &addr).First(iot).Error
+	var err = ip.tblIOT().Where("address = ?", &addr).Find(iot).Error
 	if nil != err {
 		return iot, dmodels.ParsePostgresError("IOT", err)
 	}
@@ -113,61 +148,102 @@ func (ip *iotRepo) GetIOTStatus(iotAddr string) dmodels.DeviceStatus {
 	return device.Status
 }
 
-func (ip *iotRepo) CreateMint(mint *models.MintSign,
+func (ip *iotRepo) CreateMint(req *domain.RIotMint,
 ) error {
-	mint.IOT = strings.ToLower(mint.IOT)
+	if req.Nonce <= 0 {
+		return dmodels.ErrInvalidNonce()
+	}
 
-	var iot, err = ip.GetIOTByAddress(models.EthAddress(mint.IOT))
-	if nil != err {
-		return err
+	newAmount, e1 := dmodels.NewBigNumberFromHex(req.Amount)
+	if nil != e1 {
+		return e1
+	}
+
+	req.Iot = strings.ToLower(req.Iot)
+	iot, e1 := ip.GetIOTByAddress(dmodels.EthAddress(req.Iot))
+	if nil != e1 {
+		return e1
 	}
 
 	if iot.Status < dmodels.DeviceStatusRegister {
 		return dmodels.NewError(dmodels.ECodeIOTNotAllowed, "IOT is not allow")
 	}
 
-	err = mint.Verify(ip.dMinter)
-	if nil != err {
-		return err
+	var mint = &models.MintSign{
+		ID:        0,
+		Nonce:     req.Nonce,
+		Amount:    req.Amount,
+		IotId:     iot.ID,
+		Iot:       req.Iot,
+		R:         req.R,
+		S:         req.S,
+		V:         req.V,
+		CreatedAt: time.Now(),
+	}
+
+	e1 = mint.Verify(ip.dMinter)
+	if nil != e1 {
+		return e1
 	}
 
 	var latest = make([]*models.MintSign, 0, 1)
-	err = ip.tblSign().
-		Where("iot = ?", mint.IOT).
+	e1 = ip.tblSign().
+		Where("iot = ?", mint.Iot).
 		Order("created_at desc").
 		Limit(1).
 		Find(&latest).Error
-	if nil != err {
-		return dmodels.ParsePostgresError("", err)
+	if nil != e1 {
+		return dmodels.ParsePostgresError("", e1)
 	}
 
 	if len(latest) == 0 {
-		if mint.Nonce != 1 {
-			return dmodels.NewError(
-				dmodels.ECodeIOTInvalidNonce,
-				"Nonce is not valid",
-			)
-		}
-		err = dmodels.ParsePostgresError("", ip.tblSign().Create(mint).Error)
-	} else if latest[0].Nonce == mint.Nonce {
-		err = ip.tblSign().
-			Where("id = ?", latest[0].ID).
-			Updates(map[string]interface{}{
-				"nonce":      mint.Nonce,
-				"amount":     mint.Amount,
-				"r":          mint.R,
-				"s":          mint.S,
-				"v":          mint.V,
-				"updated_at": time.Now(),
-			}).Error
-		err = dmodels.ParsePostgresError("", err)
-	} else if latest[0].Nonce+1 == mint.Nonce {
-		err = dmodels.ParsePostgresError("", ip.tblSign().Create(mint).Error)
-	} else {
-		err = dmodels.NewError(dmodels.ECodeIOTInvalidNonce, "Invalid nonce")
+		latest = append(latest, &models.MintSign{})
 	}
 
-	return err
+	if latest[0].Nonce == mint.Nonce || latest[0].Nonce+1 == mint.Nonce {
+		oldAmount, e1 := dmodels.NewBigNumberFromHex(latest[0].Amount)
+		if nil != e1 {
+			oldAmount = dmodels.NewBigNumber(0)
+		}
+
+		var incAmount = big.NewInt(0).Sub(newAmount.Int, oldAmount.Int)
+		var minted = &models.Minted{
+			ID:     uuid.NewV4().String(),
+			IotId:  iot.ID,
+			Carbon: incAmount.Int64(),
+		}
+
+		return ip.db.Transaction(func(dbTx *gorm.DB) error {
+			if latest[0].Nonce+1 == mint.Nonce {
+				err := dbTx.Table(models.TableNameMintSign).Create(mint).Error
+				if nil != err {
+					return dmodels.ParsePostgresError("", err)
+				}
+			} else {
+				err := dbTx.Table(models.TableNameMintSign).
+					Where("id = ?", latest[0].ID).
+					Updates(map[string]interface{}{
+						"nonce":      mint.Nonce,
+						"amount":     mint.Amount,
+						"r":          mint.R,
+						"s":          mint.S,
+						"v":          mint.V,
+						"updated_at": time.Now(),
+					}).Error
+				if nil != err {
+					dmodels.ParsePostgresError("", err)
+				}
+			}
+
+			err := dbTx.Table(models.TableNameMinted).Create(minted).Error
+			if nil != err {
+				return dmodels.ParsePostgresError("", err)
+			}
+			return nil
+		})
+
+	}
+	return dmodels.ErrInvalidNonce()
 }
 
 func (ip *iotRepo) GetMintSigns(req *domain.RIotGetMintSignList,
@@ -178,18 +254,71 @@ func (ip *iotRepo) GetMintSigns(req *domain.RIotGetMintSignList,
 	}
 
 	var signeds = make([]*models.MintSign, 0)
-	err = ip.tblSign().
+	var query = ip.tblSign().
 		Where(
-			"created_at > ? AND created_at < ? AND  iot = ?",
+			"updated_at > ? AND updated_at < ? AND  iot = ?",
 			time.Unix(req.From, 0), time.Unix(req.To, 0), iot.Address,
-		).
-		Order("id asc").
-		Find(&signeds).
-		Error
+		)
+
+	if req.Sort > 0 {
+		query = query.Order("updated_at desc")
+	} else {
+		query = query.Order("updated_at asc")
+	}
+
+	if req.Limit > 0 {
+		query = query.Limit(req.Limit)
+	}
+	err = query.Find(&signeds).Error
 	if nil != err {
 		return nil, dmodels.ParsePostgresError("Get mint sign", err)
 	}
 	return signeds, nil
+}
+
+func (ip *iotRepo) GetMinted(req *domain.RIotGetMintedList) ([]*models.Minted, error) {
+	var rs = make([]*models.Minted, 0)
+	var query = ip.db.Table(models.TableNameMinted).
+		Where(
+			"created_at > ? AND created_at < ? AND iot_id = ? ",
+			time.Unix(req.From, 0), time.Unix(req.To, 0), req.IotId,
+		)
+	if req.Interval > 0 {
+		var group = "day"
+		if req.Interval == 2 {
+			group = "month"
+		}
+		query = query.Select(fmt.Sprintf("date_trunc('%s', created_at), sum(carbon) as carbon", group)).
+			Group(fmt.Sprintf("date_trunc('%s', created_at)", group)).
+			Order("created_at")
+
+		query = query.Raw(
+			fmt.Sprintf(`SELECT date_trunc('%s', created_at) as created_at, sum(carbon) as carbon
+							FROM minted
+							WHERE created_at > ? AND created_at < ? and iot_id = ?
+							GROUP by date_trunc('%s', created_at)
+							ORDER by created_at asc`, group, group),
+			time.Unix(req.From, 0), time.Unix(req.To, 0), req.IotId,
+		)
+	} else {
+		query = query.Select("created_at, carbon").Order("created_at asc")
+	}
+
+	var err = query.Find(&rs).Error
+	if nil != err {
+		return nil, dmodels.ParsePostgresError("", err)
+	}
+	return rs, nil
+}
+
+func (ip *iotRepo) CountIot(req *domain.RIotCount) (int64, error) {
+	var count = int64(0)
+	var query = ip.tblIOT()
+	var err = query.Count(&count).Error
+	if nil != err {
+		return 0, dmodels.ParsePostgresError("Count iot", err)
+	}
+	return count, nil
 }
 
 func (ip *iotRepo) tblIOT() *gorm.DB {

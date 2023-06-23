@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
+
+	"github.com/Dcarbon/go-shared/dmodels"
 )
 
 type ProjectStatus int
@@ -17,15 +19,17 @@ const (
 )
 
 type Project struct {
-	ID        int64                 `json:"id" gorm:"primaryKey"`                         //
-	Owner     EthAddress            `json:"owner" gorm:"index"`                           // ETH address
-	Status    ProjectStatus         `json:"status"`                                       //
-	Location  *Point4326            `json:"location" gorm:"type:geometry(POINT, 4326)"`   //
-	Specs     *ProjectSpecs         `json:"specs,omitempty" gorm:"foreignKey:ProjectID"`  //
-	Descs     []*ProjectDescription `json:"descs,omitempty" gorm:"foreignKey:ProjectID"`  //
-	Images    []*ProjectImage       `json:"images,omitempty" gorm:"foreignKey:ProjectID"` //
-	CreatedAt time.Time             `json:"createdAt"`                                    //
-	UpdatedAt time.Time             `json:"updatedAt"`                                    //
+	ID           int64                 `json:"id" gorm:"primaryKey"`                         //
+	Owner        dmodels.EthAddress    `json:"owner" gorm:"index"`                           // ETH address
+	Status       ProjectStatus         `json:"status"`                                       //
+	LocationName string                `json:"locationName,omitempty"`                       //
+	Location     *Point4326            `json:"location" gorm:"type:geometry(POINT, 4326)"`   //
+	Specs        *ProjectSpecs         `json:"specs,omitempty" gorm:"foreignKey:ProjectID"`  //
+	Area         float64               `json:"area,omitempty"`                               //
+	Descs        []*ProjectDescription `json:"descs,omitempty" gorm:"foreignKey:ProjectID"`  //
+	Images       []*ProjectImage       `json:"images,omitempty" gorm:"foreignKey:ProjectID"` //
+	CreatedAt    time.Time             `json:"createdAt"`                                    //
+	UpdatedAt    time.Time             `json:"updatedAt"`                                    //
 } //@name Project
 
 func (*Project) TableName() string { return TableNameProject }

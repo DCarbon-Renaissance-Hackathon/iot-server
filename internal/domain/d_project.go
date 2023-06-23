@@ -3,6 +3,7 @@ package domain
 import (
 	"time"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/iott-cloud/internal/models"
 )
 
@@ -21,10 +22,12 @@ type IProject interface {
 }
 
 type RProjectCreate struct {
-	Owner    models.EthAddress     `json:"owner" binding:"required"`    // ETH address
-	Location *models.Point4326     `json:"location" binding:"required"` //
-	Specs    *RProjectUpdateSpecs  `json:"specs" binding:"required"`    //
-	Descs    []*RProjectUpdateDesc `json:"descs" binding:"required"`    //
+	Owner        dmodels.EthAddress    `json:"owner" binding:"required"`    // ETH address
+	Location     *models.Point4326     `json:"location" binding:"required"` //
+	Specs        *RProjectUpdateSpecs  `json:"specs" binding:"required"`    //
+	Descs        []*RProjectUpdateDesc `json:"descs" binding:"required"`    //
+	Area         float64               `json:"area"`
+	LocationName string                `json:"locationName"`
 } // @name RProjectCreate
 
 type RProjectUpdateDesc struct {

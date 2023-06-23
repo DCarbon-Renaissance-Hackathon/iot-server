@@ -10,7 +10,6 @@ import (
 	"github.com/Dcarbon/go-shared/libs/utils"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 var iotRepoTest domain.IIot
@@ -21,7 +20,7 @@ var testDomainMinter = esign.MustNewERC712(
 	&esign.TypedDataDomain{
 		Name:              "CARBON",
 		Version:           "1",
-		ChainId:           1,
+		ChainId:           1337,
 		VerifyingContract: "0x7BDDCb9699a3823b8B27158BEBaBDE6431152a85",
 	},
 	esign.MustNewTypedDataField(
@@ -42,13 +41,14 @@ func init() {
 }
 
 func TestIOTCreate(t *testing.T) {
+	// 21.016975, 105.780917
 	iot, err := iotRepoTest.Create(&domain.RIotCreate{
 		Project: 1,
 		Type:    models.IOTTypeBurnMethane,
-		Address: "0x1064F6f232bdD6E38a248C0C3a1456b023f05e3B",
+		Address: "0xe445517abb524002bb04c96f96abb87b8b19b53d",
 		Position: &models.Point4326{
-			Lat: 21.015462,
-			Lng: 105.704904,
+			Lat: 21.016975,
+			Lng: 105.780917,
 		},
 	})
 
@@ -60,8 +60,22 @@ func TestIOTChangeStatus(t *testing.T) {
 	var status = dmodels.DeviceStatusSuccess
 	var data, err = iotRepoTest.ChangeStatus(
 		&domain.RIotChangeStatus{
-			IotId:  1,
+			IotId:  292,
 			Status: &status,
+		},
+	)
+	utils.PanicError("Update iot status ", err)
+	utils.Dump("TestIOTChangeStatus", data)
+}
+
+func TestIotUpdate(t *testing.T) {
+	var data, err = iotRepoTest.Update(
+		&domain.RIotUpdate{
+			IotId: 294,
+			Position: &models.Point4326{
+				Lng: 105.553486,
+				Lat: 21.706776,
+			},
 		},
 	)
 	utils.PanicError("Update iot status ", err)
@@ -72,6 +86,22 @@ func TestIOTGetIOT(t *testing.T) {
 	var data, err = iotRepoTest.GetIOT(1)
 	utils.PanicError("TestIOTGetIOT", err)
 	utils.Dump("TestIOTGetIOT", data)
+}
+
+func TestIOTGetIOTPosition(t *testing.T) {
+	var data, err = iotRepoTest.GetIotPositions(&domain.RIotGetList{
+		Status: dmodels.DeviceStatusSuccess,
+	})
+	utils.PanicError("TestIOTGetIOTPosition", err)
+	utils.Dump("TestIOTGetIOTPosition", data)
+}
+
+func TestIOTGetIOTByAddress(t *testing.T) {
+	var data, err = iotRepoTest.GetIOTByAddress(
+		dmodels.EthAddress("0x72ef9da2af1d657b3fd16e93fb9e6d82c4c615f1"),
+	)
+	utils.PanicError("TestIOTGetIOTPosition", err)
+	utils.Dump("TestIOTGetIOTPosition", data)
 }
 
 func TestIOTGetByBB(t *testing.T) {
@@ -142,14 +172,12 @@ func TestCreateMint(t *testing.T) {
 	var sign = &models.MintSign{
 		Nonce:  2,
 		Amount: "0xffaaa1",
-		IOT:    iotAddr,
+		Iot:    iotAddr,
 	}
 	_, err := sign.Sign(testDomainMinter, iotPrv)
 	utils.PanicError("TestCreateMint", err)
 
 	utils.Dump("MintSign: ", sign)
-	// err = irepo.CreateMint(sign)
-	// utils.PanicError("TestCreateMint", err)
 }
 
 func TestGetMint(t *testing.T) {
@@ -162,7 +190,63 @@ func TestGetMint(t *testing.T) {
 	utils.Dump("TestGetMint", signeds)
 }
 
-func TestIsAddress(t *testing.T) {
-	isAddr := common.IsHexAddress("0x6cff13d489623029d4d102fa81947527e175ba8d")
-	log.Println("Is address: ", isAddr)
+func TestMint(t *testing.T) {
+	var pk = "0123456789012345678901234567890123456789012345678901234567880000"
+	var iotAddr = "0xe445517abb524002bb04c96f96abb87b8b19b53d"
+	var amount1 = 9 * 1e9
+	var amount2 = 12 * 1e9
+
+	var sign1 = &models.MintSign{
+		Nonce:  1,
+		IotId:  292,
+		Iot:    iotAddr,
+		Amount: dmodels.NewBigNumber(int64(amount1)).ToHex(),
+	}
+	var sign2 = &models.MintSign{
+		Nonce:  1,
+		IotId:  292,
+		Iot:    iotAddr,
+		Amount: dmodels.NewBigNumber(int64(amount2)).ToHex(),
+	}
+
+	_, err := sign1.Sign(testDomainMinter, pk)
+	utils.PanicError("", err)
+
+	err = iotRepoTest.CreateMint(&domain.RIotMint{
+		Nonce:  sign1.Nonce,
+		Amount: sign1.Amount,
+		Iot:    iotAddr,
+		R:      sign1.R,
+		S:      sign1.S,
+		V:      sign1.V,
+	})
+	utils.PanicError("", err)
+
+	time.Sleep(3 * time.Second)
+
+	_, err = sign2.Sign(testDomainMinter, pk)
+	utils.PanicError("", err)
+
+	iotRepoTest.CreateMint(&domain.RIotMint{
+		Iot:    iotAddr,
+		Amount: sign2.Amount,
+		Nonce:  sign2.Nonce,
+		R:      sign2.R,
+		S:      sign2.S,
+		V:      sign2.V,
+	})
+	utils.PanicError("", err)
+}
+
+func TestGetMinted(t *testing.T) {
+	var now = time.Now().Unix()
+	log.Println(now-30*86400, now)
+	data, err := iotRepoTest.GetMinted(&domain.RIotGetMintedList{
+		From:     now - 30*86400,
+		To:       now,
+		IotId:    292,
+		Interval: 0,
+	})
+	utils.PanicError("", err)
+	utils.Dump("", data)
 }

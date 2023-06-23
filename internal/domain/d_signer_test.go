@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/go-shared/libs/esign"
-	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
@@ -30,7 +30,7 @@ func generateSign(addr string, pk string) (*SignedToken, error) {
 	}
 	return &SignedToken{
 		SignedAt: signedAt,
-		Address:  models.EthAddress(addr),
+		Address:  dmodels.EthAddress(addr),
 		Signed:   hexutil.Encode(signed),
 	}, nil
 }

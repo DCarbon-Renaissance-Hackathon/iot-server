@@ -9,6 +9,7 @@ const (
 
 	TableNameIOT      = "iots"
 	TableNameMintSign = "mint_sign"
+	TableNameMinted   = "minted"
 	// TableNameMetrics     = "metrics"
 
 	TableNameSensors     = "sensors"

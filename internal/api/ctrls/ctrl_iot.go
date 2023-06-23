@@ -3,6 +3,7 @@ package ctrls
 import (
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/go-shared/edef"
@@ -13,6 +14,8 @@ import (
 	"github.com/Dcarbon/iott-cloud/internal/repo"
 	"github.com/Dcarbon/iott-cloud/internal/rss"
 	"github.com/gin-gonic/gin"
+	"github.com/paulmach/orb"
+	"github.com/paulmach/orb/geojson"
 )
 
 type IotCtrl struct {
@@ -96,6 +99,39 @@ func (ctrl *IotCtrl) Create(r *gin.Context) {
 }
 
 // Create godoc
+// @Summary      GetIotByAddress
+// @Description  GetIotByAddress
+// @Tags         Iots
+// @Accept       json
+// @Produce      json
+// @Param        address			query		string				true	"IOT information"
+// @Success      200				{object}	IOTDevice
+// @Failure      400				{object}	Error
+// @Failure      404				{object}	Error
+// @Failure      500				{object}	Error
+// @Router       /iots/by-address	[get]
+func (ctrl *IotCtrl) GetIotByAddress(r *gin.Context) {
+	var payload = &struct {
+		Address dmodels.EthAddress `form:"address" binding:"required,hexadecimal"`
+	}{}
+
+	// var payload, _ = r.GetQuery("address")
+	var err = r.Bind(payload)
+	if nil != err {
+		r.JSON(400, dmodels.ErrBadRequest(err.Error()))
+		return
+	}
+
+	iot, err := ctrl.iot.GetIOTByAddress(payload.Address)
+	if nil != err {
+		r.JSON(500, err)
+		return
+	}
+
+	r.JSON(200, iot)
+}
+
+// Create godoc
 // @Summary      GetIot
 // @Description  Get iot by id
 // @Tags         Iots
@@ -120,6 +156,36 @@ func (ctrl *IotCtrl) GetIot(r *gin.Context) {
 	} else {
 		r.JSON(200, iot)
 	}
+}
+
+// Create godoc
+// @Summary      GetIotPosition
+// @Description  Get all iot location by geojson format
+// @Tags         Iots
+// @Accept       json
+// @Produce      json
+// @Success      200				{array}		PositionId
+// @Failure      400				{object}	Error
+// @Failure      404				{object}	Error
+// @Failure      500				{object}	Error
+// @Router       /iots/geojson		[get]
+func (ctrl *IotCtrl) GetIotPosition(r *gin.Context) {
+	locs, err := ctrl.iot.GetIotPositions(&domain.RIotGetList{
+		Status: dmodels.DeviceStatusSuccess,
+	})
+	if nil != err {
+		r.JSON(500, err)
+		return
+	}
+
+	var featureCollection = geojson.NewFeatureCollection()
+	for _, loc := range locs {
+		var feature = geojson.NewFeature(&orb.Point{loc.Position.Lng, loc.Position.Lat})
+		feature.Properties = make(geojson.Properties)
+		feature.Properties["id"] = loc.Id
+		featureCollection.Append(feature)
+	}
+	r.JSON(200, featureCollection)
 }
 
 // Create godoc
@@ -180,7 +246,6 @@ func (ctrl *IotCtrl) ChangeStatus(r *gin.Context) {
 		ID:     iot.ID,
 		Status: dmodels.DeviceStatus(iot.Status),
 	})
-
 }
 
 // Create godoc
@@ -242,14 +307,14 @@ func (ctrl *IotCtrl) GetByBB(r *gin.Context) {
 // @Accept			json
 // @Produce			json
 // @Param			iotAddr			path		string				true	"IOT address"
-// @Param			iot				body		models.MintSign		true	"Signature"
+// @Param			iot				body		RIotMint			true	"Signature"
 // @Success			200				{object}	models.MintSign
 // @Failure			400				{object}	Error
 // @Failure			404				{object}	Error
 // @Failure			500				{object}	Error
 // @Router			/iots/{iotAddr}/mint-sign	[post]
 func (ctrl *IotCtrl) CreateMint(r *gin.Context) {
-	var mint = &models.MintSign{}
+	var mint = &domain.RIotMint{}
 	var err = r.BindJSON(mint)
 	if nil != err {
 		r.JSON(400, dmodels.ErrBadRequest("Payload must be json: "+err.Error()))
@@ -270,40 +335,66 @@ func (ctrl *IotCtrl) CreateMint(r *gin.Context) {
 // @Tags			Iots
 // @Accept			json
 // @Produce			json
-// @Param			iotId			path		number  			true  "IOT id"
-// @Param			from			query		number				true  "Duration start"
-// @Param			to				query		number				true  "Duration end"
-// @Success			200				{array}		models.MintSign
-// @Failure			400				{object}	Error
-// @Failure			404				{object}	Error
-// @Failure			500				{object}	Error
-// @Router			/iots/{iotId}/mint-sign/ 	[get]
+// @Param			iotId					path		number				true	"Iot id"
+// @Param			from					query		number				true	"Duration start"
+// @Param			to						query		number				false	"Duration end"
+// @Param			sort					query		number				false	"Sort by created at"
+// @Success			200						{array}		models.MintSign
+// @Failure			400						{object}	Error
+// @Failure			404						{object}	Error
+// @Failure			500						{object}	Error
+// @Router			/iots/{iotId}/mint-sign 	[get]
 func (ctrl *IotCtrl) GetMintSigns(r *gin.Context) {
-	iotId, err := strconv.ParseInt(r.Param("iotId"), 10, 64)
+	var payload = &domain.RIotGetMintSignList{}
+	payload.IotId, _ = strconv.ParseInt(r.Param("iotId"), 10, 64)
+
+	var err = r.Bind(payload)
 	if nil != err {
-		r.JSON(400, dmodels.ErrBadRequest("Invalid iot id (Must be integer)"))
+		log.Println("error; ", err, payload)
+		r.JSON(400, dmodels.ErrBadRequest("Payload must be json: "+err.Error()))
 		return
 	}
-	from, err := strconv.ParseInt(r.Query("from"), 10, 64)
-	if nil != err {
-		r.JSON(400, dmodels.ErrBadRequest("Missing duration start"))
-		return
+	// utils.Dump("GetMintSignPayload: ", payload)
+
+	if payload.To == 0 {
+		payload.To = time.Now().Unix()
 	}
 
-	to, err := strconv.ParseInt(r.Query("to"), 10, 64)
-	if nil != err {
-		r.JSON(400, dmodels.ErrBadRequest("Missing duration start"))
-		return
-	}
-
-	signeds, err := ctrl.iot.GetMintSigns(&domain.RIotGetMintSignList{
-		From:  from,
-		To:    to,
-		IotId: iotId,
-	})
+	signeds, err := ctrl.iot.GetMintSigns(payload)
 	if nil != err {
 		r.JSON(500, err)
+	} else {
+		r.JSON(200, signeds)
+	}
+}
+
+// GetRawMetric		godoc
+// @Summary			Get minted of iot
+// @Description		Get minted of iot
+// @Tags			Iots
+// @Accept			json
+// @Produce			json
+// @Param			iotId					path		number				true	"Iot id"
+// @Param			from					query		number				true	"Duration start"
+// @Param			to						query		number				true	"Duration end"
+// @Param			interval				query		number				false	"Interval: 1:day 2:month"
+// @Success			200						{array}		models.Minted
+// @Failure			400						{object}	Error
+// @Failure			404						{object}	Error
+// @Failure			500						{object}	Error
+// @Router			/iots/{iotId}/minted 	[get]
+func (ctrl *IotCtrl) GetMinted(r *gin.Context) {
+	var payload = &domain.RIotGetMintedList{}
+	var err = r.Bind(payload)
+	if nil != err {
+		r.JSON(400, dmodels.ErrBadRequest("Payload error "+err.Error()))
 		return
+	}
+	// utils.Dump("payload", payload)
+
+	signeds, err := ctrl.iot.GetMinted(payload)
+	if nil != err {
+		r.JSON(500, err)
 	} else {
 		r.JSON(200, signeds)
 	}
@@ -315,7 +406,7 @@ func (ctrl *IotCtrl) GetMintSigns(r *gin.Context) {
 // @Tags			Iots
 // @Accept			json
 // @Produce			json
-// @Success			200				{integer}	esign.TypedDataDomain
+// @Success			200				{object}	esign.TypedDataDomain
 // @Failure			400				{object}	Error
 // @Failure			404				{object}	Error
 // @Failure			500				{object}	Error
@@ -324,9 +415,35 @@ func (ctrl *IotCtrl) GetDomainSeperator(r *gin.Context) {
 	r.JSON(200, ctrl.separator)
 }
 
+// GetDomainSeperator		godoc
+// @Summary			CountIot
+// @Description		Num of iot
+// @Tags			Iots
+// @Accept			json
+// @Produce			json
+// @Success			200				{object}	Count
+// @Failure			400				{object}	Error
+// @Failure			404				{object}	Error
+// @Failure			500				{object}	Error
+// @Router			/iots/count [get]
+func (ctrl *IotCtrl) Count(r *gin.Context) {
+	var payload = &domain.RIotCount{}
+	var count, err = ctrl.iot.CountIot(payload)
+	if nil != err {
+		r.JSON(500, err)
+		return
+	}
+
+	r.JSON(200, &RsCount{Count: count})
+}
+
 func (ctrl *IotCtrl) GetIOTRepo() domain.IIot {
 	return ctrl.iot
 }
+
+type RsCount struct {
+	Count int64 `json:"count"`
+} // @name Count
 
 // type RIOTChangeStatus struct {
 // 	// Address string              `json:"address"`

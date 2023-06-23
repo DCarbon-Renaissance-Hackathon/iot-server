@@ -9,6 +9,7 @@ const (
 	IOTTypeWindPower   IOTType = 10
 	IOTTypeSolarPower  IOTType = 11
 	IOTTypeBurnMethane IOTType = 20
+	IOTTypeBurnBiomass IOTType = 21
 	IOTTypeFertilizer  IOTType = 30
 	IOTTypeTrash       IOTType = 31
 )
@@ -25,7 +26,7 @@ const (
 type IOTDevice struct {
 	ID       int64                `json:"id" gorm:"primary_key"`
 	Project  int64                `json:"project" `
-	Address  EthAddress           `json:"address" gorm:"unique"`
+	Address  dmodels.EthAddress   `json:"address" gorm:"unique"`
 	Type     IOTType              `json:"type" `
 	Status   dmodels.DeviceStatus `json:"status"`
 	Position Point4326            `json:"position" gorm:"type:geometry(POINT, 4326)"`

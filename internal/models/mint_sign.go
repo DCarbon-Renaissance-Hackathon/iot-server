@@ -24,11 +24,14 @@ import (
 // 	),
 // )
 
+// const Precision = int64(1e9)
+
 type MintSign struct {
 	ID        int64     `json:"id" gorm:"primary_key"` //
+	IotId     int64     `json:"iotId"`                 // IoT id
 	Nonce     int64     `json:"nonce" gorm:"index"`    //
 	Amount    string    `json:"amount" `               // Hex
-	IOT       string    `json:"iot" gorm:"index"`      // IoT Address
+	Iot       string    `json:"iot" gorm:"index"`      // IoT Address
 	R         string    `json:"r" `                    //
 	S         string    `json:"s" `                    //
 	V         string    `json:"v" `                    //
@@ -38,10 +41,11 @@ type MintSign struct {
 
 func (*MintSign) TableName() string { return TableNameMintSign }
 
-// prvStr: private key (hex)
-func (msign *MintSign) Sign(dMinter *esign.ERC712, prvStr string) ([]byte, error) {
-	signedRaw, err := dMinter.Sign(prvStr, map[string]interface{}{
-		"iot":    msign.IOT,
+// Only for test
+// pk: private key (hex)
+func (msign *MintSign) Sign(dMinter *esign.ERC712, pk string) ([]byte, error) {
+	signedRaw, err := dMinter.Sign(pk, map[string]interface{}{
+		"iot":    msign.Iot,
 		"amount": msign.Amount,
 		"nonce":  msign.Nonce,
 	})
@@ -58,7 +62,7 @@ func (msign *MintSign) Sign(dMinter *esign.ERC712, prvStr string) ([]byte, error
 
 func (msign *MintSign) Verify(dMinter *esign.ERC712) error {
 	var data = map[string]interface{}{
-		"iot":    msign.IOT,
+		"iot":    msign.Iot,
 		"amount": msign.Amount,
 		"nonce":  msign.Nonce,
 	}
@@ -73,9 +77,18 @@ func (msign *MintSign) Verify(dMinter *esign.ERC712) error {
 		return dmodels.NewError(dmodels.ECodeIOTInvalidMintSign, "Invalid mint sign: "+err.Error())
 	}
 
-	err = dMinter.Verify(msign.IOT, signed, data)
+	err = dMinter.Verify(msign.Iot, signed, data)
 	if nil != err {
 		return dmodels.NewError(dmodels.ECodeIOTInvalidMintSign, "Invalid mint sign: "+err.Error())
 	}
 	return nil
 }
+
+type Minted struct {
+	ID        string    `json:"id,omitempty" `
+	IotId     int64     `json:"iotId,omitempty" gorm:"index:minted_idx_ca_iot,priority:2"`
+	Carbon    int64     `json:"carbon,omitempty" `
+	CreatedAt time.Time `json:"createdAt,omitempty" gorm:"index:minted_idx_ca_iot,priority:1"`
+}
+
+func (*Minted) TableName() string { return TableNameMinted }

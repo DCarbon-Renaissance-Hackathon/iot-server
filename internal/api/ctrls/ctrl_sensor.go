@@ -7,7 +7,6 @@ import (
 
 	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
-	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/repo"
 	"github.com/gin-gonic/gin"
 )
@@ -15,6 +14,7 @@ import (
 type SensorCtrl struct {
 	iotRepo    domain.IIot
 	sensorRepo domain.ISensor
+	// sensorPusher *edef.SensorPusher
 }
 
 func NewSensorCtrl(iotRepo domain.IIot) (*SensorCtrl, error) {
@@ -145,7 +145,7 @@ func (ctrl *SensorCtrl) GetSensors(r *gin.Context) {
 	}
 
 	var iotId, _ = strconv.ParseInt(r.Query("iot_id"), 10, 64)
-	var iotAddr = models.EthAddress(r.Query("iot_address"))
+	var iotAddr = dmodels.EthAddress(r.Query("iot_address"))
 
 	if iotId <= 0 && !iotAddr.IsEmpty() {
 		iot, err := ctrl.iotRepo.GetIOTByAddress(iotAddr)
@@ -195,22 +195,19 @@ func (ctrl *SensorCtrl) CreateSm(r *gin.Context) {
 
 	// sensor, err := ctrl.sensorRepo.GetSensor(&domain.SensorID{Address: payload.SensorAddress})
 	// if nil != err {
-	// 	r.JSON(400, dmodels.ErrNotImplement("Request missing param. Please check again"))
+	// 	r.JSON(400, dmodels.ErrNotFound("Sensor can't found by ethereum address"))
 	// 	return
 	// }
 
-	// if sensor.Address.IsEmpty() {
-	// 	return nil, models.NewError(dmodels.ECodeSensorHasNoAddress, "SensorAddress is empty")
-	// }
-
-	// var signed = &models.SmSignature{
-	// 	ID:        uuid.NewV4().String(),
-	// 	IsIotSign: true,
-	// 	IotID:     sensor.IotID,
-	// 	SensorID:  sensor.ID,
-	// 	Data:      req.Data,
-	// 	Signed:    req.Signed,
-	// }
+	// ctrl.sensorPusher.PushNewMetric(&edef.SMSign{
+	// 	IsIotSign:  true,
+	// 	IotID:      sensor.IotID,
+	// 	SensorID:   sensor.ID,
+	// 	SensorType: sensor.Type,
+	// 	Data:       payload.Data,
+	// 	Signed:     payload.Signed,
+	// 	Signer:     *sensor.Address,
+	// })
 
 	sensor, err := ctrl.sensorRepo.CreateSM(payload)
 	if nil != err {
@@ -222,38 +219,38 @@ func (ctrl *SensorCtrl) CreateSm(r *gin.Context) {
 }
 
 // Create godoc
-// @Summary      Create sm by iot
+// @Summary      Create SM by signature
 // @Description  create sensor metric (for signature-disabled sensor)
 // @Tags         Sensors
 // @Accept       json
 // @Produce      json
-// @Param        iot   				body		domain.RCreateSMFromIOT		true	"Signature of metric was signed by iot"
+// @Param        payload			body		RCreateSensorMetric		true	"Signature of metric was signed by iot or sensor"
 // @Success      200				{object}	Sensor
 // @Failure      400				{object}	Error
 // @Failure      404				{object}	Error
 // @Failure      500				{object}	Error
-// @Router       /sensors/sm/create-by-iot	[post]
-func (ctrl *SensorCtrl) CreateSMByIOT(r *gin.Context) {
-	var payload = &domain.RCreateSMFromIOT{}
+// @Router       /sensors/sm/create-sign	[post]
+func (ctrl *SensorCtrl) CreateSMBySign(r *gin.Context) {
+	var payload = &domain.RCreateSensorMetric{}
 	var err = r.Bind(payload)
 	if nil != err {
 		r.JSON(400, dmodels.ErrBadRequest(err.Error()))
 		return
 	}
 
-	if payload.IotAddress.IsEmpty() {
-		r.JSON(400, dmodels.ErrBadRequest("Missing iot address"))
-		return
-	}
-
-	iot, err := ctrl.iotRepo.GetIOTByAddress(payload.IotAddress)
+	iot, err := ctrl.iotRepo.GetIOTByAddress(payload.SignAddress)
 	if nil != err {
 		r.JSON(500, err)
 		return
 	}
 
+	if payload.IsIotSign && iot.Address != payload.SignAddress {
+		r.JSON(500, dmodels.NewError(dmodels.ECodeInvalidSignature, "Invalid signer"))
+		return
+	}
+
 	payload.IotID = iot.ID
-	sensor, err := ctrl.sensorRepo.CreateSMFromIot(payload)
+	sensor, err := ctrl.sensorRepo.CreateSensorMetric(payload)
 	if nil != err {
 		r.JSON(500, err)
 	} else {
@@ -263,7 +260,7 @@ func (ctrl *SensorCtrl) CreateSMByIOT(r *gin.Context) {
 
 // Create godoc
 // @Summary      GetSensorMetrics
-// @Description  create sensor
+// @Description  Get raw sensor metric (with signature)
 // @Tags         Sensors
 // @Accept       json
 // @Produce      json
@@ -291,6 +288,38 @@ func (ctrl *SensorCtrl) GetMetrics(r *gin.Context) {
 		r.JSON(500, err)
 	} else {
 		r.JSON(http.StatusOK, &SensorMetrics{Metrics: metrics})
+	}
+}
+
+// Create godoc
+// @Summary			GetSensorAggregatedMetrics
+// @Description		Get sensor aggregated metrics (by day or month)
+// @Tags			Sensors
+// @Accept			json
+// @Produce			json
+// @Param			from						query		int				true	"From unix (second)"
+// @Param			to							query		int				true	"To unix (second)"
+// @Param			iotId						query		int				true	"Iot id"
+// @Param			sensorId					query		int				false	"Sensor id"
+// @Param			interval					query		number			false	"Interval: 1 : day 2: month"
+// @Success			200							{array}		TimeValue
+// @Failure			400							{object}	Error
+// @Failure			404							{object}	Error
+// @Failure			500							{object}	Error
+// @Router			/sensors/sm/aggregate		[get]
+func (ctrl *SensorCtrl) GetAggregatedMetrics(r *gin.Context) {
+	var payload = &domain.RSMAggregate{}
+	var err = r.Bind(payload)
+	if nil != err {
+		r.JSON(400, dmodels.ErrBadRequest(err.Error()))
+		return
+	}
+
+	metrics, err := ctrl.sensorRepo.GetAggregatedMetrics(payload)
+	if nil != err {
+		r.JSON(500, err)
+	} else {
+		r.JSON(http.StatusOK, metrics)
 	}
 }
 

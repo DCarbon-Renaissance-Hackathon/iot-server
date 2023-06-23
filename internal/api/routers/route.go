@@ -29,7 +29,6 @@ type Router struct {
 	iotCtrl      *ctrls.IotCtrl
 	projectCtrl  *ctrls.ProjectCtrl
 	userCtrl     *ctrls.UserCtrl
-	proposalCtrl *ctrls.ProposalCtrl
 	sensorCtrl   *ctrls.SensorCtrl
 	operatorCtrl *ctrls.OperatorCtrl
 }
@@ -48,10 +47,10 @@ func NewRouter(config Config,
 		return nil, err
 	}
 
-	proposalCtrl, err := ctrls.NewProposalCtrl(config.DBUrl)
-	if nil != err {
-		return nil, err
-	}
+	// proposalCtrl, err := ctrls.NewProposalCtrl(config.DBUrl)
+	// if nil != err {
+	// 	return nil, err
+	// }
 
 	iotCtrl, err := ctrls.NewIotCtrl(
 		&esign.TypedDataDomain{
@@ -89,7 +88,6 @@ func NewRouter(config Config,
 		config:       config,
 		iotCtrl:      iotCtrl,
 		projectCtrl:  projectCtrl,
-		proposalCtrl: proposalCtrl,
 		userCtrl:     userCtrl,
 		sensorCtrl:   sensorCtrl,
 		operatorCtrl: opCtrl,
@@ -117,10 +115,15 @@ func NewRouter(config Config,
 		)
 
 		iotRoute.GET("/:iotId", iotCtrl.GetIot)
-		iotRoute.GET("/:iotId/mint-sign/", iotCtrl.GetMintSigns)
-		iotRoute.GET("/seperator", iotCtrl.GetDomainSeperator)
+		iotRoute.GET("/:iotId/mint-sign", iotCtrl.GetMintSigns)
+		iotRoute.GET("/:iotId/minted", iotCtrl.GetMinted)
 
-		iotRoute.POST("/:iotAddr/mint-sign/", iotCtrl.CreateMint)
+		iotRoute.GET("/seperator", iotCtrl.GetDomainSeperator)
+		iotRoute.GET("/geojson", iotCtrl.GetIotPosition)
+		iotRoute.GET("/count", iotCtrl.Count)
+		iotRoute.GET("/by-address", iotCtrl.GetIotByAddress)
+
+		iotRoute.POST("/:iotAddr/mint-sign", iotCtrl.CreateMint)
 
 		// iotRoute.GET("/by-bb", iotCtrl.GetByBB)
 		// iotRoute.POST("/:iotAddr/metrics", iotCtrl.CreateMetric)
@@ -144,9 +147,10 @@ func NewRouter(config Config,
 		sensorRoute.GET("/", sensorCtrl.GetSensors)
 
 		sensorRoute.POST("/sm/create", sensorCtrl.CreateSm)
-		sensorRoute.POST("/sm/create-by-iot", sensorCtrl.CreateSMByIOT)
+		sensorRoute.POST("/sm/create-sign", sensorCtrl.CreateSMBySign)
 
 		sensorRoute.GET("/sm", sensorCtrl.GetMetrics)
+		sensorRoute.GET("/sm/aggregate", sensorCtrl.GetAggregatedMetrics)
 	}
 
 	var opRoute = v1.Group("/op")
@@ -187,20 +191,20 @@ func NewRouter(config Config,
 		// projectRoute.PUT("/:projectId/change-status", projectCtrl.ChangeStatus)
 	}
 
-	var proposalRoute = v1.Group("/proposals")
-	{
-		proposalRoute.POST(
-			"/",
-			mids.NewA2(config.JwtKey, "").HandlerFunc,
-			proposalCtrl.Create,
-		)
-		proposalRoute.GET("/", proposalCtrl.GetList)
-		projectRoute.PUT(
-			"/change-status",
-			mids.NewA2(config.JwtKey, "proposals-change-status").HandlerFunc,
-			proposalCtrl.ChangeStatus,
-		)
-	}
+	// var proposalRoute = v1.Group("/proposals")
+	// {
+	// 	proposalRoute.POST(
+	// 		"/",
+	// 		mids.NewA2(config.JwtKey, "").HandlerFunc,
+	// 		proposalCtrl.Create,
+	// 	)
+	// 	proposalRoute.GET("/", proposalCtrl.GetList)
+	// 	projectRoute.PUT(
+	// 		"/change-status",
+	// 		mids.NewA2(config.JwtKey, "proposals-change-status").HandlerFunc,
+	// 		proposalCtrl.ChangeStatus,
+	// 	)
+	// }
 
 	var userRoute = v1.Group("/users")
 	{

@@ -1,30 +1,20 @@
 package ctrls
 
-import (
-	"net/http"
-
-	"github.com/Dcarbon/go-shared/dmodels"
-	"github.com/Dcarbon/iott-cloud/internal/domain"
-	"github.com/Dcarbon/iott-cloud/internal/repo"
-	"github.com/gin-gonic/gin"
-)
-
 type ProposalCtrl struct {
-	repo domain.IProposal
 }
 
-func NewProposalCtrl(dbUrl string) (*ProposalCtrl, error) {
-	var rp, err = repo.NewProposalRepo(dbUrl)
-	if nil != err {
-		return nil, err
-	}
+// func NewProposalCtrl(dbUrl string) (*ProposalCtrl, error) {
+// 	var rp, err = repo.NewProposalRepo(dbUrl)
+// 	if nil != err {
+// 		return nil, err
+// 	}
 
-	var ctrl = &ProposalCtrl{
-		repo: rp,
-	}
+// 	var ctrl = &ProposalCtrl{
+// 		repo: rp,
+// 	}
 
-	return ctrl, nil
-}
+// 	return ctrl, nil
+// }
 
 // Create godoc
 // @Summary      Create proposal
@@ -38,9 +28,9 @@ func NewProposalCtrl(dbUrl string) (*ProposalCtrl, error) {
 // @Failure      404  		{object}	Error
 // @Failure      500  		{object}	Error
 // @Router       /proposals/ 	[post]
-func (ctrl *ProposalCtrl) Create(r *gin.Context) {
-	r.JSON(http.StatusNotImplemented, dmodels.ErrNotImplement())
-}
+// func (ctrl *ProposalCtrl) Create(r *gin.Context) {
+// 	r.JSON(http.StatusNotImplemented, dmodels.ErrNotImplement())
+// }
 
 // Create godoc
 // @Summary      ChangeStatus
@@ -54,9 +44,9 @@ func (ctrl *ProposalCtrl) Create(r *gin.Context) {
 // @Failure      404  		{object}		Error
 // @Failure      500  		{object}		Error
 // @Router       /proposals/change-status 	[put]
-func (ctrl *ProposalCtrl) ChangeStatus(r *gin.Context) {
-	r.JSON(http.StatusNotImplemented, dmodels.ErrNotImplement())
-}
+// func (ctrl *ProposalCtrl) ChangeStatus(r *gin.Context) {
+// 	r.JSON(http.StatusNotImplemented, dmodels.ErrNotImplement())
+// }
 
 // Create godoc
 // @Summary      GetByList
@@ -71,6 +61,6 @@ func (ctrl *ProposalCtrl) ChangeStatus(r *gin.Context) {
 // @Failure      404  		{object}	Error
 // @Failure      500  		{object}	Error
 // @Router       /proposals/ [get]
-func (ctrl *ProposalCtrl) GetList(r *gin.Context) {
-	r.JSON(http.StatusNotImplemented, dmodels.ErrNotImplement())
-}
+// func (ctrl *ProposalCtrl) GetList(r *gin.Context) {
+// 	r.JSON(http.StatusNotImplemented, dmodels.ErrNotImplement())
+// }

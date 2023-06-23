@@ -13,7 +13,6 @@ import (
 	"github.com/Dcarbon/iott-cloud/internal/api/mids"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/env"
-	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/repo"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
@@ -316,7 +315,7 @@ func (ctrl *ProjectCtrl) isProjectOwner(r *gin.Context, projectId int64,
 		return err
 	}
 
-	if models.EthAddress(user.EthAddress) != models.EthAddress(owner) {
+	if dmodels.EthAddress(user.EthAddress) != dmodels.EthAddress(owner) {
 		return dmodels.ErrorPermissionDenied
 	}
 	return nil

@@ -6,14 +6,13 @@ import (
 
 	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/go-shared/libs/esign"
-	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 type SignedToken struct {
-	Address  models.EthAddress `json:"address"`  // Sign address
-	SignedAt int64             `json:"signedAt"` // Timestamp (second)
-	Signed   string            `json:"signed"`   // Hex string
+	Address  dmodels.EthAddress `json:"address"`  // Sign address
+	SignedAt int64              `json:"signedAt"` // Timestamp (second)
+	Signed   string             `json:"signed"`   // Hex string
 }
 
 // Verify token by address

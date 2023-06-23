@@ -11,9 +11,9 @@ type ROpSetStatus struct {
 }
 
 type RChangeMetric struct {
-	IotId    int64             `json:"iotId"`
-	SensorId int64             `json:"sensorId"`
-	Metric   *models.AllMetric `json:"metric"`
+	IotId    int64              `json:"iotId"`
+	SensorId int64              `json:"sensorId"`
+	Metric   *dmodels.AllMetric `json:"metric"`
 }
 
 type RsGetMetrics struct {

@@ -27,7 +27,7 @@ import (
 type Sensor struct {
 	ID        int64                `json:"id"`
 	IotID     int64                `json:"iotId"`
-	Address   *EthAddress          `json:"address" gorm:"index:,unique,where:length(address) > 0"`
+	Address   *dmodels.EthAddress  `json:"address" gorm:"index:,unique,where:length(address) > 0"`
 	Type      dmodels.SensorType   `json:"type"`
 	Status    dmodels.DeviceStatus `json:"status"`
 	CreatedAt time.Time            `json:"createdAt"`

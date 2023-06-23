@@ -9,8 +9,8 @@ import (
 
 // Identify of sensor. Required id or address
 type SensorID struct {
-	ID      int64             `json:"id"`
-	Address models.EthAddress `json:"address"`
+	ID      int64              `json:"id"`
+	Address dmodels.EthAddress `json:"address"`
 }
 
 type Metric struct {
@@ -18,7 +18,7 @@ type Metric struct {
 	IotId      int64              `json:"iotId"`
 	SensorId   int64              `json:"sensorId"`
 	SensorType dmodels.SensorType `json:"sensorType"`
-	Indicator  *models.AllMetric  `json:"indicator"`
+	Indicator  *dmodels.AllMetric `json:"indicator"`
 	Data       string             `json:"data"`
 	CreatedAt  time.Time          `json:"createdAt"`
 }
@@ -26,7 +26,7 @@ type Metric struct {
 type RCreateSensor struct {
 	IotID   int64              `json:"iotId"`
 	Type    dmodels.SensorType `json:"type"`    // CH4, KW, MW, ...
-	Address models.EthAddress  `json:"address"` // Sensor address
+	Address dmodels.EthAddress `json:"address"` // Sensor address
 } //@name RCreateSensor
 
 type RChangeSensorStatus struct {
@@ -46,27 +46,42 @@ type RGetSensors struct {
 }
 
 type RCreateSM struct {
-	SensorAddress models.EthAddress `json:"sensorAddress"` //
-	Data          string            `json:"data"`          // Hex json of SMExtract
-	Signed        string            `json:"signed"`        // Hex of rsv (65bytes)
+	SensorAddress dmodels.EthAddress `json:"sensorAddress"` //
+	Data          string             `json:"data"`          // Hex json of SMExtract
+	Signed        string             `json:"signed"`        // Hex of rsv (65bytes)
 }
 
-type RCreateSMFromIOT struct {
-	Data       string            `json:"data"`     // Hex json of SMExtract
-	Signed     string            `json:"signed"`   // Hex of rsv (65bytes)
-	SensorID   int64             `json:"sensorId"` //
-	IotAddress models.EthAddress `json:"iot"`      //
-	IotID      int64             `json:"iotId"`    //
-}
+type RCreateSensorMetric struct {
+	Data        string             `json:"data" binding:"required"`        // Hex json of SMExtract
+	Signed      string             `json:"signed" binding:"required"`      // Hex of rsv (65bytes)
+	SignAddress dmodels.EthAddress `json:"signAddress" binding:"required"` //
+	IsIotSign   bool               `json:"isIotSign"`                      //
+	SensorID    int64              `json:"sensorId" binding:"required"`    //
+	IotID       int64              `json:"-"`                              //
+} //@name RCreateSensorMetric
 
 type RGetSM struct {
 	From     int64 `json:"from" form:"from" binding:"required"`          // Timestamp start
 	To       int64 `json:"to" form:"to" binding:"required"`              // Timestamp end
 	IotId    int64 `json:"iotId" form:"iotId" binding:"required"`        //
+	SensorId int64 `json:"sensorId" form:"sensorId" `                    //
 	Skip     int64 `json:"skip" form:"skip"`                             //
 	Limit    int64 `json:"limit" form:"limit" binding:"required,max=50"` //
-	SensorId int64 `json:"sensorId" form:"sensorId" `                    //
+	WithSign bool  `json:"withSign" form:"withSign"`
 }
+
+type RSMAggregate struct {
+	From     int64 `json:"from" form:"from" binding:"required"`         // Timestamp start
+	To       int64 `json:"to" form:"to" binding:"required"`             // Timestamp end
+	IotId    int64 `json:"iotId" form:"iotId" binding:"required"`       //
+	SensorId int64 `json:"sensorId" form:"sensorId" binding:"required"` //
+	Interval int   `json:"interval" form:"interval" binding:"required"` // 1 : day 2: month
+}
+
+type TimeValue struct {
+	Time time.Time `json:"time"`
+	Val  float64   `json:"value"`
+} // @name TimeValue
 
 type ISensor interface {
 	SetOperatorCache(op IOperator)
@@ -77,8 +92,9 @@ type ISensor interface {
 	GetSensors(*RGetSensors) ([]*models.Sensor, error)
 	GetSensorType(req *SensorID) (dmodels.SensorType, error)
 
-	CreateSM(*RCreateSM) (*models.SmSignature, error)
-	CreateSMFromIot(*RCreateSMFromIOT) (*models.SmSignature, error)
+	CreateSM(*RCreateSM) (*models.SmSignature, error)                     // old
+	CreateSensorMetric(*RCreateSensorMetric) (*models.SmSignature, error) // New
 
 	GetMetrics(*RGetSM) ([]*Metric, error)
+	GetAggregatedMetrics(*RSMAggregate) ([]*TimeValue, error)
 }

@@ -1,12 +1,8 @@
 package models
 
 import (
-	"database/sql/driver"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"regexp"
-	"strconv"
+	"log"
 	"time"
 
 	"github.com/Dcarbon/go-shared/dmodels"
@@ -14,51 +10,54 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-var regString = regexp.MustCompile(`"*"$`)
+// var regString = regexp.MustCompile(`"*"$`)
 
 // Sensor metric data
-// type Sm struct {
-// 	ID        string     `gorm:"primaryKey"`
-// 	SignID    string     ``
-// 	Indicator *AllMetric `gorm:"type:json"`
-// 	CreatedAt time.Time  ``
-// }
-// func (*Sm) TableName() string { return TableNameSm }
+type Sm struct {
+	ID        string             `json:"id" gorm:"primaryKey"`                //
+	SignID    string             `json:"signId"`                              //
+	SensorID  int64              `json:"sensorID" gorm:"index_ca,priority:3"` //
+	IotID     int64              `json:"iotID" gorm:"index_ca,priority:2"`    //
+	Indicator *dmodels.AllMetric `json:"metric" gorm:"type:json"`             //
+	CreatedAt time.Time          `json:"ca" gorm:"index_ca,priority:1"`       //
+}
+
+func (*Sm) TableName() string { return TableNameSm }
 
 // Sensor metric
-type SmFloat struct {
-	ID        string    ``
-	SignID    string    ``
-	Indicator float64   ``
-	CreatedAt time.Time ``
-}
+// type SmFloat struct {
+// 	ID        string    ``
+// 	SignID    string    ``
+// 	Indicator float64   ``
+// 	CreatedAt time.Time ``
+// }
 
-func (*SmFloat) TableName() string { return TableNameSmFloat }
+// func (*SmFloat) TableName() string { return TableNameSmFloat }
 
-// Sensor metric gps
-type SmGPS struct {
-	ID        string     `json:"id"`
-	SignID    string     `json:"signId"`
-	Position  *Point4326 `json:"indicator" gorm:"type:geometry(POINT, 4326)"`
-	CreatedAt time.Time  `json:"createdAt"`
-}
+// // Sensor metric gps
+// type SmGPS struct {
+// 	ID        string     `json:"id"`
+// 	SignID    string     `json:"signId"`
+// 	Position  *Point4326 `json:"indicator" gorm:"type:geometry(POINT, 4326)"`
+// 	CreatedAt time.Time  `json:"createdAt"`
+// }
 
-func (*SmGPS) TableName() string { return TableNameSmGPS }
+// func (*SmGPS) TableName() string { return TableNameSmGPS }
 
 // Sensor metric signature
 type SmSignature struct {
-	ID        string    `json:"id" `                                  //
-	IsIotSign bool      `json:"isIotSign" `                           //
-	IotID     int64     `json:"iotID" gorm:"index_ca,priority:2"`     //
-	SensorID  int64     `json:"sensorID" `                            //
-	Data      string    `json:"data" `                                // Hex json of SensorMetricExtract
-	Signed    string    `json:"signed" gorm:"unique"`                 // RSV Data
-	CreatedAt time.Time `json:"createdAt" gorm:"index_ca,priority:1"` //
+	ID        string    `json:"id" `                                        //
+	IsIotSign bool      `json:"isIotSign" `                                 //
+	IotID     int64     `json:"iotID" gorm:"index:sms_index_ca,priority:2"` //
+	SensorID  int64     `json:"sensorID" `                                  //
+	Data      string    `json:"data" `                                      // Hex json of SensorMetricExtract
+	Signed    string    `json:"signed" gorm:"unique"`                       // RSV Data
+	CreatedAt time.Time `json:"ca" gorm:"index:sms_index_ca,priority:1"`    //
 }
 
 func (*SmSignature) TableName() string { return TableNameSmSignature }
 
-func (sm *SmSignature) VerifySignature(addr EthAddress, sType dmodels.SensorType) (*SMExtract, error) {
+func (sm *SmSignature) VerifySignature(addr dmodels.EthAddress, sType dmodels.SensorType) (*SMExtract, error) {
 	err := addr.VerifyPersonalSign(sm.Data, sm.Signed)
 	if nil != err {
 		return nil, err
@@ -79,14 +78,21 @@ func (sm *SmSignature) ExtractData() (*SMExtract, error) {
 	}
 
 	x := &SMExtract{}
-	return x, json.Unmarshal(rawX, x)
+	err = json.Unmarshal(rawX, x)
+	if nil != err {
+		log.Println("Extract data error: ", err)
+		log.Println("data: ", string(rawX))
+		return nil, err
+	}
+	return x, nil
+
 }
 
 type SMExtract struct {
-	From      int64      `json:"from"`
-	To        int64      `json:"to"`
-	Indicator *AllMetric `json:"indicator"`
-	Address   EthAddress `json:"address"` // Sign (sensor or iot ) address
+	From      int64              `json:"from"`
+	To        int64              `json:"to"`
+	Indicator *dmodels.AllMetric `json:"indicator"`
+	Address   dmodels.EthAddress `json:"address"` // Sign (sensor or iot ) address
 }
 
 func (smx *SMExtract) IsValid(sType dmodels.SensorType) error {
@@ -124,94 +130,94 @@ func (smx *SMExtract) Signed(pkey string) (*SmSignature, error) {
 	}, nil
 }
 
-type DefaultMetric struct {
-	Val Float64 `json:"value,omitempty"`
-}
+// type DefaultMetric struct {
+// 	Val Float64 `json:"value,omitempty"`
+// }
 
-type GPSMetric struct {
-	Lat Float64 `json:"lat,omitempty"`
-	Lng Float64 `json:"lng,omitempty"`
-}
+// type GPSMetric struct {
+// 	Lat Float64 `json:"lat,omitempty"`
+// 	Lng Float64 `json:"lng,omitempty"`
+// }
 
-type AllMetric struct {
-	DefaultMetric
-	GPSMetric
-} // @name models.AllMetric
+// type AllMetric struct {
+// 	DefaultMetric
+// 	GPSMetric
+// } // @name models.AllMetric
 
-func (am *AllMetric) Scan(value interface{}) error {
-	if value == nil {
-		return nil
-	}
+// func (am *AllMetric) Scan(value interface{}) error {
+// 	if value == nil {
+// 		return nil
+// 	}
 
-	var rs = &AllMetric{}
-	var err error
-	switch vt := value.(type) {
-	case string:
-		if vt == `""` {
-			return nil
-		}
-		err = json.Unmarshal([]byte(vt), rs)
-	case []byte:
-		err = json.Unmarshal(vt, rs)
-	default:
-		return errors.New("can't scan metric")
-	}
-	if nil != err {
-		return err
-	}
-	if nil == am {
-		am = new(AllMetric)
-	}
-	*am = *rs
-	return nil
-}
+// 	var rs = &AllMetric{}
+// 	var err error
+// 	switch vt := value.(type) {
+// 	case string:
+// 		if vt == `""` {
+// 			return nil
+// 		}
+// 		err = json.Unmarshal([]byte(vt), rs)
+// 	case []byte:
+// 		err = json.Unmarshal(vt, rs)
+// 	default:
+// 		return errors.New("can't scan metric")
+// 	}
+// 	if nil != err {
+// 		return err
+// 	}
+// 	if nil == am {
+// 		am = new(AllMetric)
+// 	}
+// 	*am = *rs
+// 	return nil
+// }
 
-func (am AllMetric) Value() (driver.Value, error) {
-	return json.Marshal(am)
-}
+// func (am AllMetric) Value() (driver.Value, error) {
+// 	return json.Marshal(am)
+// }
 
-func (am *AllMetric) IsValid(sType dmodels.SensorType) error {
-	switch sType {
-	case dmodels.SensorTypeFlow:
-		if am.DefaultMetric.Val <= 0 {
-			return dmodels.NewError(dmodels.ECodeSensorInvalidMetric, "Indicator of metric (value) must be > 0")
-		}
-	case dmodels.SensorTypePower:
-		if am.DefaultMetric.Val <= 0 {
-			return dmodels.NewError(dmodels.ECodeSensorInvalidMetric, "Indicator of metric (value) must be > 0")
-		}
-	case dmodels.SensorTypeGPS:
-		if am.Lat == 0 && am.Lng == 0 {
-			return dmodels.NewError(dmodels.ECodeSensorInvalidMetric, "Indicator of metric (gps) must be != 0")
-		}
-	}
-	return nil
-}
+// func (am *AllMetric) IsValid(sType dmodels.SensorType) error {
+// 	switch sType {
+// 	case dmodels.SensorTypeFlow:
+// 		if am.DefaultMetric.Val <= 0 {
+// 			return dmodels.NewError(dmodels.ECodeSensorInvalidMetric, "Indicator of metric (value) must be > 0")
+// 		}
+// 	case dmodels.SensorTypePower:
+// 		if am.DefaultMetric.Val <= 0 {
+// 			return dmodels.NewError(dmodels.ECodeSensorInvalidMetric, "Indicator of metric (value) must be > 0")
+// 		}
+// 	case dmodels.SensorTypeGPS:
+// 		if am.Lat == 0 && am.Lng == 0 {
+// 			return dmodels.NewError(dmodels.ECodeSensorInvalidMetric, "Indicator of metric (gps) must be != 0")
+// 		}
+// 	}
+// 	return nil
+// }
 
-type Float64 float64
+// type Float64 float64
 
-func (f *Float64) MarshalJSON() ([]byte, error) {
-	if nil == f {
-		return []byte("0"), nil
-	}
-	return []byte(fmt.Sprintf(`"%f"`, *f)), nil
-}
+// func (f *Float64) MarshalJSON() ([]byte, error) {
+// 	if nil == f {
+// 		return []byte("0"), nil
+// 	}
+// 	return []byte(fmt.Sprintf(`"%f"`, *f)), nil
+// }
 
-func (f *Float64) UnmarshalJSON(data []byte) error {
-	var s = string(data)
-	if regString.Match(data) {
-		s = s[1 : len(s)-1]
-	}
+// func (f *Float64) UnmarshalJSON(data []byte) error {
+// 	var s = string(data)
+// 	if regString.Match(data) {
+// 		s = s[1 : len(s)-1]
+// 	}
 
-	v, err := strconv.ParseFloat(s, 64)
-	if nil != err {
-		return err
-	}
+// 	v, err := strconv.ParseFloat(s, 64)
+// 	if nil != err {
+// 		return err
+// 	}
 
-	if nil == f {
-		f = new(Float64)
-	}
+// 	if nil == f {
+// 		f = new(Float64)
+// 	}
 
-	*f = Float64(v)
-	return nil
-}
+// 	*f = Float64(v)
+// 	return nil
+// }
