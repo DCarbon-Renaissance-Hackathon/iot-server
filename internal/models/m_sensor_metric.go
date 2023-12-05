@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Dcarbon/go-shared/dmodels"
+	"github.com/Dcarbon/go-shared/ecodes"
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
@@ -14,12 +15,12 @@ import (
 
 // Sensor metric data
 type Sm struct {
-	ID        string             `json:"id" gorm:"primaryKey"`                //
+	ID        string             `json:"id"       gorm:"primaryKey"`          //
 	SignID    string             `json:"signId"`                              //
 	SensorID  int64              `json:"sensorID" gorm:"index_ca,priority:3"` //
-	IotID     int64              `json:"iotID" gorm:"index_ca,priority:2"`    //
-	Indicator *dmodels.AllMetric `json:"metric" gorm:"type:json"`             //
-	CreatedAt time.Time          `json:"ca" gorm:"index_ca,priority:1"`       //
+	IotID     int64              `json:"iotID"    gorm:"index_ca,priority:2"` //
+	Indicator *dmodels.AllMetric `json:"metric"   gorm:"type:json"`           //
+	CreatedAt time.Time          `json:"ca"       gorm:"index_ca,priority:1"` //
 }
 
 func (*Sm) TableName() string { return TableNameSm }
@@ -74,7 +75,7 @@ func (sm *SmSignature) VerifySignature(addr dmodels.EthAddress, sType dmodels.Se
 func (sm *SmSignature) ExtractData() (*SMExtract, error) {
 	rawX, err := hexutil.Decode(sm.Data)
 	if nil != err {
-		return nil, dmodels.NewError(dmodels.ECodeInvalidSignature, "Data of signature must be hex")
+		return nil, dmodels.NewError(ecodes.InvalidSignature, "Data of signature must be hex")
 	}
 
 	x := &SMExtract{}
@@ -97,7 +98,7 @@ type SMExtract struct {
 
 func (smx *SMExtract) IsValid(sType dmodels.SensorType) error {
 	if smx.From <= 1578104100 || smx.To > time.Now().Unix() {
-		return dmodels.NewError(dmodels.ECodeSensorInvalidMetric, "Time range of metric is invalid [1578104100, now)")
+		return dmodels.NewError(ecodes.SensorInvalidMetric, "Time range of metric is invalid [1578104100, now)")
 	}
 
 	err := smx.Indicator.IsValid(sType)
@@ -128,6 +129,21 @@ func (smx *SMExtract) Signed(pkey string) (*SmSignature, error) {
 		Data:      hexutil.Encode(raw),
 		Signed:    hexutil.Encode(signedRaw),
 	}, nil
+}
+
+// Instant sensor metric extract
+type ISMExtract struct {
+	Signer    dmodels.EthAddress `json:"signer"`    // Sign address (sensor or iot )
+	CreatedAt int64              `json:"ca"`        //
+	Indicator *dmodels.AllMetric `json:"indicator"` //
+}
+
+// Accumulate sensor metric
+type ASMExtract struct {
+	Signer dmodels.EthAddress `json:"signer"` // Sign address (sensor or iot )
+	From   int64              `json:"from"`
+	To     int64              `json:"to"`
+	Value  dmodels.Float64    `json:"value"`
 }
 
 // type DefaultMetric struct {

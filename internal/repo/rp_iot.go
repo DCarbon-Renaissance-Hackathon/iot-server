@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Dcarbon/go-shared/dmodels"
+	"github.com/Dcarbon/go-shared/ecodes"
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
@@ -41,7 +42,8 @@ func NewIOTRepo(dMinter *esign.ERC712,
 	return ip, nil
 }
 
-func (ip *iotRepo) Create(req *domain.RIotCreate) (*models.IOTDevice, error) {
+func (ip *iotRepo) Create(req *domain.RIotCreate,
+) (*models.IOTDevice, error) {
 	var iot = &models.IOTDevice{
 		ID:       0,
 		Project:  req.Project,
@@ -93,7 +95,7 @@ func (ip *iotRepo) Update(req *domain.RIotUpdate,
 	return iot, err
 }
 
-func (ip *iotRepo) GetIOT(id int64) (*models.IOTDevice, error) {
+func (ip *iotRepo) GetIot(id int64) (*models.IOTDevice, error) {
 	var iot = &models.IOTDevice{}
 	var err = ip.tblIOT().Where("id = ?", id).First(iot).Error
 	if nil != err {
@@ -102,19 +104,28 @@ func (ip *iotRepo) GetIOT(id int64) (*models.IOTDevice, error) {
 	return iot, nil
 }
 
-func (ip *iotRepo) GetIotPositions(req *domain.RIotGetList) ([]*domain.PositionId, error) {
+func (ip *iotRepo) GetIots(req *domain.RIotGetList,
+) ([]*models.IOTDevice, error) {
+	var data = make([]*models.IOTDevice, 0)
+	var err = ip.queryGetIots(req).Find(&data).Error
+	if nil != err {
+		return nil, dmodels.ParsePostgresError("IOT", err)
+	}
+	return data, nil
+}
+
+func (ip *iotRepo) GetIotPositions(req *domain.RIotGetList,
+) ([]*domain.PositionId, error) {
 	var locs = make([]*domain.PositionId, 0)
-	var err = ip.tblIOT().
-		Select("id, position").
-		Where("status = ?", req.Status).
-		Find(&locs).Error
+	var err = ip.queryGetIots(req).Select("id, position").Find(&locs).Error
 	if nil != err {
 		return nil, dmodels.ParsePostgresError("IOT", err)
 	}
 	return locs, nil
 }
 
-func (ip *iotRepo) GetIOTByAddress(addr dmodels.EthAddress) (*models.IOTDevice, error) {
+func (ip *iotRepo) GetIotByAddress(addr dmodels.EthAddress,
+) (*models.IOTDevice, error) {
 	var iot = &models.IOTDevice{}
 	var err = ip.tblIOT().Where("address = ?", &addr).Find(iot).Error
 	if nil != err {
@@ -124,19 +135,8 @@ func (ip *iotRepo) GetIOTByAddress(addr dmodels.EthAddress) (*models.IOTDevice, 
 	return iot, nil
 }
 
-func (ip *iotRepo) GetByBB(min, max *models.Point4326,
-) ([]*models.IOTDevice, error) {
-	var iots = make([]*models.IOTDevice, 0)
-	var err = ip.tblIOT().
-		Where(
-			"ST_WITHIN(pos, ST_MakeEnvelope(?, ?, ?, ?, 4326))",
-			min.Lng, min.Lat, max.Lng, max.Lat,
-		).
-		Find(&iots).Error
-	return iots, dmodels.ParsePostgresError("IOT", err)
-}
-
-func (ip *iotRepo) GetIOTStatus(iotAddr string) dmodels.DeviceStatus {
+func (ip *iotRepo) GetIOTStatus(iotAddr string,
+) dmodels.DeviceStatus {
 	var device = &models.IOTDevice{}
 	var err = ip.tblIOT().
 		Select("status").
@@ -160,13 +160,13 @@ func (ip *iotRepo) CreateMint(req *domain.RIotMint,
 	}
 
 	req.Iot = strings.ToLower(req.Iot)
-	iot, e1 := ip.GetIOTByAddress(dmodels.EthAddress(req.Iot))
+	iot, e1 := ip.GetIotByAddress(dmodels.EthAddress(req.Iot))
 	if nil != e1 {
 		return e1
 	}
 
 	if iot.Status < dmodels.DeviceStatusRegister {
-		return dmodels.NewError(dmodels.ECodeIOTNotAllowed, "IOT is not allow")
+		return dmodels.NewError(ecodes.IOTNotAllowed, "IOT is not allow")
 	}
 
 	var mint = &models.MintSign{
@@ -248,7 +248,7 @@ func (ip *iotRepo) CreateMint(req *domain.RIotMint,
 
 func (ip *iotRepo) GetMintSigns(req *domain.RIotGetMintSignList,
 ) ([]*models.MintSign, error) {
-	var iot, err = ip.GetIOT(req.IotId)
+	var iot, err = ip.GetIot(req.IotId)
 	if nil != err {
 		return nil, err
 	}
@@ -276,8 +276,9 @@ func (ip *iotRepo) GetMintSigns(req *domain.RIotGetMintSignList,
 	return signeds, nil
 }
 
-func (ip *iotRepo) GetMinted(req *domain.RIotGetMintedList) ([]*models.Minted, error) {
-	var rs = make([]*models.Minted, 0)
+func (ip *iotRepo) GetMinted(req *domain.RIotGetMintedList,
+) ([]*models.Minted, error) {
+	var tz = "Asia/Ho_Chi_Minh"
 	var query = ip.db.Table(models.TableNameMinted).
 		Where(
 			"created_at > ? AND created_at < ? AND iot_id = ? ",
@@ -288,26 +289,33 @@ func (ip *iotRepo) GetMinted(req *domain.RIotGetMintedList) ([]*models.Minted, e
 		if req.Interval == 2 {
 			group = "month"
 		}
-		query = query.Select(fmt.Sprintf("date_trunc('%s', created_at), sum(carbon) as carbon", group)).
-			Group(fmt.Sprintf("date_trunc('%s', created_at)", group)).
-			Order("created_at")
 
 		query = query.Raw(
-			fmt.Sprintf(`SELECT date_trunc('%s', created_at) as created_at, sum(carbon) as carbon
+			fmt.Sprintf(`SELECT date_trunc('%s', created_at, ?) as ca, sum(carbon) as carbon
 							FROM minted
 							WHERE created_at > ? AND created_at < ? and iot_id = ?
-							GROUP by date_trunc('%s', created_at)
-							ORDER by created_at asc`, group, group),
-			time.Unix(req.From, 0), time.Unix(req.To, 0), req.IotId,
+							GROUP BY ca
+							`, group),
+			tz, time.Unix(req.From, 0).Format(time.RFC3339), time.Unix(req.To, 0).Format(time.RFC3339), req.IotId,
 		)
 	} else {
-		query = query.Select("created_at, carbon").Order("created_at asc")
+		query = query.Select("created_at as ca, carbon").Order("ca asc")
 	}
 
-	var err = query.Find(&rs).Error
+	var data = make([]*aggMinted, 0)
+	var err = query.Find(&data).Error
 	if nil != err {
 		return nil, dmodels.ParsePostgresError("", err)
 	}
+
+	var rs = make([]*models.Minted, len(data))
+	for i, it := range data {
+		rs[i] = &models.Minted{
+			CreatedAt: it.Ca,
+			Carbon:    it.Carbon,
+		}
+	}
+
 	return rs, nil
 }
 
@@ -321,10 +329,54 @@ func (ip *iotRepo) CountIot(req *domain.RIotCount) (int64, error) {
 	return count, nil
 }
 
+func (ip *iotRepo) IsIotActived(req *domain.RIsIotActiced,
+) (bool, error) {
+	var count = int64(0)
+	var err = ip.db.Table(models.TableNameMinted).
+		Where(
+			"created_at >= ? AND created_at < ? AND iot_id = ?",
+			time.Unix(req.From, 0), time.Unix(req.To, 0), req.IotId,
+		).Count(&count).Error
+	if nil != err {
+		return false, dmodels.ParsePostgresError("Check iot is actived", err)
+	}
+	return count > 0, nil
+}
+
+func (ip *iotRepo) queryGetIots(req *domain.RIotGetList) *gorm.DB {
+	var query = ip.tblIOT()
+	if req.ProjectId != 0 {
+		query = query.Where("project = ?", req.ProjectId)
+	}
+
+	if req.Status != 0 {
+		query = query.Where("status = ?", req.Status)
+	}
+
+	return query
+}
+
 func (ip *iotRepo) tblIOT() *gorm.DB {
 	return ip.db.Table(models.TableNameIOT)
 }
 
 func (ip *iotRepo) tblSign() *gorm.DB {
 	return ip.db.Table(models.TableNameMintSign)
+}
+
+// func (ip *iotRepo) GetByBB(min, max *models.Point4326,
+// ) ([]*models.IOTDevice, error) {
+// 	var iots = make([]*models.IOTDevice, 0)
+// 	var err = ip.tblIOT().
+// 		Where(
+// 			"ST_WITHIN(pos, ST_MakeEnvelope(?, ?, ?, ?, 4326))",
+// 			min.Lng, min.Lat, max.Lng, max.Lat,
+// 		).
+// 		Find(&iots).Error
+// 	return iots, dmodels.ParsePostgresError("IOT", err)
+// }
+
+type aggMinted struct {
+	Ca     time.Time
+	Carbon int64
 }

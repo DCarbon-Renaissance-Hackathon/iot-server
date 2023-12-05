@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Dcarbon/go-shared/dmodels"
+	"github.com/Dcarbon/go-shared/ecodes"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/rss"
@@ -139,7 +140,7 @@ func (impl *SensorRepo) CreateSM(req *domain.RCreateSM,
 	}
 
 	if sensor.Address.IsEmpty() {
-		return nil, dmodels.NewError(dmodels.ECodeSensorHasNoAddress, "SensorAddress is empty")
+		return nil, dmodels.NewError(ecodes.SensorHasNoAddress, "SensorAddress is empty")
 	}
 
 	var signed = &models.SmSignature{
@@ -169,7 +170,7 @@ func (impl *SensorRepo) CreateSensorMetric(req *domain.RCreateSensorMetric,
 	var signAddr = sensor.Address
 	if req.IsIotSign {
 		if !sensor.Address.IsEmpty() {
-			return nil, dmodels.NewError(dmodels.ECodeSensorHasAddress, "SensorAddress is not empty")
+			return nil, dmodels.NewError(ecodes.SensorHasAddress, "SensorAddress is not empty")
 		}
 
 		signAddr = &req.SignAddress
@@ -214,13 +215,18 @@ func (impl *SensorRepo) CreateSensorMetric(req *domain.RCreateSensorMetric,
 	return signed, nil
 }
 
-func (impl *SensorRepo) GetMetrics(req *domain.RGetSM) ([]*domain.Metric, error) {
+func (impl *SensorRepo) GetMetrics(req *domain.RGetSM,
+) ([]*domain.Metric, error) {
 	var rs = make([]*domain.Metric, 0)
 	var query = impl.db.Table(models.TableNameSmSignature + " as tblSign").
 		Offset(int(req.Skip)).
 		Limit(int(req.Limit)).
 		Select("tblSign.id, tblSign.data, tblSign.sensor_id, tblSign.iot_id, tblSign.created_at, sensors.type as sensor_type").
 		Joins("JOIN sensors ON tblSign.sensor_id = sensors.id ")
+
+	if req.Sort == domain.SortDesc {
+		query = query.Order("tblSign.created_at desc")
+	}
 
 	if req.From > 0 {
 		query = query.Where("tblSign.created_at > ?", time.Unix(req.From, 0))
@@ -259,7 +265,8 @@ func (impl *SensorRepo) GetAggregatedMetrics(req *domain.RSMAggregate,
 	return impl.getMetricAggregate(req)
 }
 
-func (impl *SensorRepo) GetSignedMetric(req *domain.RGetSM) ([]*models.SmSignature, error) {
+func (impl *SensorRepo) GetSignedMetric(req *domain.RGetSM,
+) ([]*models.SmSignature, error) {
 	var rs = make([]*models.SmSignature, 0)
 	var query = impl.db.Table(models.TableNameSmSignature + " as tblSign").
 		Offset(int(req.Skip)).

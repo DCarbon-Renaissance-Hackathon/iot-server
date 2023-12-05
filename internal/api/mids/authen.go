@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Dcarbon/go-shared/dmodels"
+	"github.com/Dcarbon/go-shared/ecodes"
 	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -84,11 +85,11 @@ func DecodeJWT(key string, token string) (*ClaimModel, error) {
 		},
 	)
 	if nil != err {
-		return nil, dmodels.NewError(dmodels.ECodeUnauthorized, err.Error())
+		return nil, dmodels.NewError(ecodes.Unauthorized, err.Error())
 	}
 
 	if !jtoken.Valid {
-		return nil, dmodels.NewError(dmodels.ECodeUnauthorized, "token is invalid")
+		return nil, dmodels.NewError(ecodes.Unauthorized, "token is invalid")
 	}
 
 	return claim.ClaimModel, nil

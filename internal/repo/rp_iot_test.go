@@ -83,7 +83,7 @@ func TestIotUpdate(t *testing.T) {
 }
 
 func TestIOTGetIOT(t *testing.T) {
-	var data, err = iotRepoTest.GetIOT(1)
+	var data, err = iotRepoTest.GetIot(1)
 	utils.PanicError("TestIOTGetIOT", err)
 	utils.Dump("TestIOTGetIOT", data)
 }
@@ -97,20 +97,11 @@ func TestIOTGetIOTPosition(t *testing.T) {
 }
 
 func TestIOTGetIOTByAddress(t *testing.T) {
-	var data, err = iotRepoTest.GetIOTByAddress(
+	var data, err = iotRepoTest.GetIotByAddress(
 		dmodels.EthAddress("0x72ef9da2af1d657b3fd16e93fb9e6d82c4c615f1"),
 	)
 	utils.PanicError("TestIOTGetIOTPosition", err)
 	utils.Dump("TestIOTGetIOTPosition", data)
-}
-
-func TestIOTGetByBB(t *testing.T) {
-	var data, err = iotRepoTest.GetByBB(
-		&models.Point4326{Lng: 104.1, Lat: 20},
-		&models.Point4326{Lng: 106.1, Lat: 22},
-	)
-	utils.PanicError("TestIOTGetByBB", err)
-	utils.Dump("TestIOTGetByBB", data)
 }
 
 // func TestIOTCreateMetrics(t *testing.T) {
@@ -242,10 +233,23 @@ func TestGetMinted(t *testing.T) {
 	var now = time.Now().Unix()
 	log.Println(now-30*86400, now)
 	data, err := iotRepoTest.GetMinted(&domain.RIotGetMintedList{
-		From:     now - 30*86400,
-		To:       now,
-		IotId:    292,
-		Interval: 0,
+		From:     1693760400,
+		To:       1693846799,
+		IotId:    291,
+		Interval: 1,
+	})
+	utils.PanicError("", err)
+	utils.Dump("", data)
+}
+
+func TestIsIotActived(t *testing.T) {
+	var now = time.Now().Unix()
+	var to = now - 86400
+	log.Println(to, now)
+	data, err := iotRepoTest.IsIotActived(&domain.RIsIotActiced{
+		From:  to,
+		To:    now,
+		IotId: 290,
 	})
 	utils.PanicError("", err)
 	utils.Dump("", data)

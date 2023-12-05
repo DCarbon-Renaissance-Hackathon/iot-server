@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Dcarbon/go-shared/dmodels"
+	"github.com/Dcarbon/go-shared/ecodes"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/net/context"
@@ -35,7 +36,7 @@ func (sa *SignedAuth) HandlerFunc(r *gin.Context) {
 	if nil != err {
 		r.AbortWithError(
 			http.StatusUnauthorized,
-			dmodels.NewError(dmodels.ECodeUnauthorized, "Invalid sign token. It must be sign verify"),
+			dmodels.NewError(ecodes.Unauthorized, "Invalid sign token. It must be sign verify"),
 		)
 		return
 	}

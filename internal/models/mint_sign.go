@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Dcarbon/go-shared/dmodels"
+	"github.com/Dcarbon/go-shared/ecodes"
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
@@ -74,12 +75,12 @@ func (msign *MintSign) Verify(dMinter *esign.ERC712) error {
 	)
 
 	if nil != err {
-		return dmodels.NewError(dmodels.ECodeIOTInvalidMintSign, "Invalid mint sign: "+err.Error())
+		return dmodels.NewError(ecodes.IOTInvalidMintSign, "Invalid mint sign: "+err.Error())
 	}
 
 	err = dMinter.Verify(msign.Iot, signed, data)
 	if nil != err {
-		return dmodels.NewError(dmodels.ECodeIOTInvalidMintSign, "Invalid mint sign: "+err.Error())
+		return dmodels.NewError(ecodes.IOTInvalidMintSign, "Invalid mint sign: "+err.Error())
 	}
 	return nil
 }

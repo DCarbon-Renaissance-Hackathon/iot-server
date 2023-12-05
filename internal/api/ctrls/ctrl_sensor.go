@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/Dcarbon/go-shared/dmodels"
+	"github.com/Dcarbon/go-shared/ecodes"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/repo"
 	"github.com/gin-gonic/gin"
@@ -54,7 +55,7 @@ func (ctrl *SensorCtrl) Create(r *gin.Context) {
 		return
 	}
 
-	_, err = ctrl.iotRepo.GetIOT(payload.IotID)
+	_, err = ctrl.iotRepo.GetIot(payload.IotID)
 	if nil != err {
 		r.JSON(500, dmodels.ErrBadRequest(err.Error()))
 		return
@@ -148,7 +149,7 @@ func (ctrl *SensorCtrl) GetSensors(r *gin.Context) {
 	var iotAddr = dmodels.EthAddress(r.Query("iot_address"))
 
 	if iotId <= 0 && !iotAddr.IsEmpty() {
-		iot, err := ctrl.iotRepo.GetIOTByAddress(iotAddr)
+		iot, err := ctrl.iotRepo.GetIotByAddress(iotAddr)
 		if nil != err {
 			r.JSON(500, err)
 			return
@@ -238,14 +239,14 @@ func (ctrl *SensorCtrl) CreateSMBySign(r *gin.Context) {
 		return
 	}
 
-	iot, err := ctrl.iotRepo.GetIOTByAddress(payload.SignAddress)
+	iot, err := ctrl.iotRepo.GetIotByAddress(payload.SignAddress)
 	if nil != err {
 		r.JSON(500, err)
 		return
 	}
 
 	if payload.IsIotSign && iot.Address != payload.SignAddress {
-		r.JSON(500, dmodels.NewError(dmodels.ECodeInvalidSignature, "Invalid signer"))
+		r.JSON(500, dmodels.NewError(ecodes.InvalidSignature, "Invalid signer"))
 		return
 	}
 
@@ -270,6 +271,7 @@ func (ctrl *SensorCtrl) CreateSMBySign(r *gin.Context) {
 // @Param        skip				query		int  			false	"Skip"
 // @Param        limit				query		int  			true	"Limit (max: 50)"
 // @Param        sensorId			query		int  			false	"Sensor id"
+// @Param        sort				query		int  			false	"Sort (0: asc, 1: desc)"
 // @Success      200				{object}	SensorMetrics
 // @Failure      400				{object}	Error
 // @Failure      404				{object}	Error

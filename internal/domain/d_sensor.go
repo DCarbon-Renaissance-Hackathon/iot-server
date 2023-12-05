@@ -68,6 +68,7 @@ type RGetSM struct {
 	Skip     int64 `json:"skip" form:"skip"`                             //
 	Limit    int64 `json:"limit" form:"limit" binding:"required,max=50"` //
 	WithSign bool  `json:"withSign" form:"withSign"`
+	Sort     Sort  `json:"sort" form:"sort"`
 }
 
 type RSMAggregate struct {

@@ -10,7 +10,6 @@ import (
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/go-shared/libs/utils"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
-	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/repo"
 	"github.com/Dcarbon/iott-cloud/internal/rss"
 	"github.com/gin-gonic/gin"
@@ -122,7 +121,7 @@ func (ctrl *IotCtrl) GetIotByAddress(r *gin.Context) {
 		return
 	}
 
-	iot, err := ctrl.iot.GetIOTByAddress(payload.Address)
+	iot, err := ctrl.iot.GetIotByAddress(payload.Address)
 	if nil != err {
 		r.JSON(500, err)
 		return
@@ -150,11 +149,41 @@ func (ctrl *IotCtrl) GetIot(r *gin.Context) {
 		return
 	}
 
-	iot, err := ctrl.iot.GetIOT(int64(iotId))
+	iot, err := ctrl.iot.GetIot(int64(iotId))
 	if nil != err {
 		r.JSON(500, err)
 	} else {
 		r.JSON(200, iot)
+	}
+}
+
+// Create godoc
+// @Summary      GetIot
+// @Description  Get iot by id
+// @Tags         Iots
+// @Accept       json
+// @Produce      json
+// @Param        projectId			query  		int 					true	"IOT id"
+// @Param        status				query  		dmodels.DeviceStatus	true	"Status"
+// @Success      200				{array}		IOTDevice
+// @Failure      400				{object}	Error
+// @Failure      404				{object}	Error
+// @Failure      500				{object}	Error
+// @Router       /iots/list			[get]
+func (ctrl *IotCtrl) GetIots(r *gin.Context) {
+	var payload = &domain.RIotGetList{}
+	var err = r.Bind(payload)
+	if nil != err {
+		log.Println("Error: ", err)
+		r.JSON(400, dmodels.ErrBadRequest("Invalid iot id (Must be integer)"))
+		return
+	}
+
+	iots, err := ctrl.iot.GetIots(payload)
+	if nil != err {
+		r.JSON(500, err)
+	} else {
+		r.JSON(200, iots)
 	}
 }
 
@@ -201,16 +230,16 @@ func (ctrl *IotCtrl) GetIotPosition(r *gin.Context) {
 // @Failure      400				{object}	Error
 // @Router       /iots/{iotId}/change-status [put]
 func (ctrl *IotCtrl) ChangeStatus(r *gin.Context) {
-	var payload = &domain.RIotChangeStatus{}
-	var err = r.Bind(payload)
-	if nil != err {
-		r.JSON(400, dmodels.ErrBadRequest(err.Error()))
-		return
-	}
-
 	iotId, err := strconv.Atoi(r.Param("iotId"))
 	if nil != err {
 		r.JSON(400, dmodels.ErrBadRequest("Invalid iot id (Must be integer)"))
+		return
+	}
+
+	var payload = &domain.RIotChangeStatus{}
+	err = r.Bind(payload)
+	if nil != err {
+		r.JSON(400, dmodels.ErrBadRequest(err.Error()))
 		return
 	}
 
@@ -246,58 +275,6 @@ func (ctrl *IotCtrl) ChangeStatus(r *gin.Context) {
 		ID:     iot.ID,
 		Status: dmodels.DeviceStatus(iot.Status),
 	})
-}
-
-// Create godoc
-// @Summary      Get by bounding box
-// @Description  Get iot by bounding box
-// @Tags         Iots
-// @Accept       json
-// @Produce      json
-// @Param        minLng   	query      	number  true  "Min longitude"
-// @Param        minLat   	query      	number  true  "Min latitude"
-// @Param        maxLng   	query      	number  true  "Max longitude"
-// @Param        maxLat   	query      	number  true  "Max latitude"
-// @Success      200		{array}		IOTDevice
-// @Failure      400		{object}	Error
-// @Router       /iots/by-bb [get]
-func (ctrl *IotCtrl) GetByBB(r *gin.Context) {
-	minLng, err := strconv.ParseFloat(r.Query("minLng"), 64)
-	if nil != err {
-		r.JSON(400, dmodels.ErrBadRequest("Min longitude must be double"))
-		return
-	}
-	minLat, err := strconv.ParseFloat(r.Query("minLat"), 64)
-	if nil != err {
-		r.JSON(400, dmodels.ErrBadRequest("Min latitude must be double"))
-		return
-	}
-
-	maxLng, err := strconv.ParseFloat(r.Query("maxLng"), 64)
-	if nil != err {
-		r.JSON(400, dmodels.ErrBadRequest("Min longitude must be double"))
-		return
-	}
-	maxLat, err := strconv.ParseFloat(r.Query("maxLat"), 64)
-	if nil != err {
-		r.JSON(400, dmodels.ErrBadRequest("Min latitude must be double"))
-		return
-	}
-
-	var min = &models.Point4326{
-		Lng: minLng,
-		Lat: minLat,
-	}
-	var max = &models.Point4326{
-		Lng: maxLng,
-		Lat: maxLat,
-	}
-	data, err := ctrl.iot.GetByBB(min, max)
-	if nil != err {
-		r.JSON(500, err)
-	} else {
-		r.JSON(200, data)
-	}
 }
 
 // GetRawMetric		godoc
@@ -385,6 +362,7 @@ func (ctrl *IotCtrl) GetMintSigns(r *gin.Context) {
 // @Router			/iots/{iotId}/minted 	[get]
 func (ctrl *IotCtrl) GetMinted(r *gin.Context) {
 	var payload = &domain.RIotGetMintedList{}
+	payload.IotId, _ = strconv.ParseInt(r.Param("iotId"), 10, 64)
 	var err = r.Bind(payload)
 	if nil != err {
 		r.JSON(400, dmodels.ErrBadRequest("Payload error "+err.Error()))
@@ -398,6 +376,37 @@ func (ctrl *IotCtrl) GetMinted(r *gin.Context) {
 	} else {
 		r.JSON(200, signeds)
 	}
+}
+
+// IsActived		godoc
+// @Summary			IsActived
+// @Description		Check is iot is actived in range [from:to)
+// @Tags			Iots
+// @Accept			json
+// @Produce			json
+// @Param			iotId				path		number			true	"Iot id"
+// @Param			from				query		number			true	"Duration start"
+// @Param			to					query		number			true	"Duration end"
+// @Failure			400					{object}	Error
+// @Failure			404					{object}	Error
+// @Failure			500					{object}	Error
+// @Router			/iots/{iotId}/is-actived 	[get]
+func (ctrl *IotCtrl) IsActived(r *gin.Context) {
+	var payload = &domain.RIsIotActiced{}
+	payload.IotId, _ = strconv.ParseInt(r.Param("iotId"), 10, 64)
+	var err = r.Bind(payload)
+	if nil != err {
+		r.JSON(400, dmodels.ErrBadRequest("Payload error "+err.Error()))
+		return
+	}
+
+	actived, err := ctrl.iot.IsIotActived(payload)
+	if nil != err {
+		r.JSON(500, err)
+		return
+	}
+
+	r.JSON(200, &RsIsIotActived{Actived: actived})
 }
 
 // GetDomainSeperator		godoc
@@ -444,6 +453,10 @@ func (ctrl *IotCtrl) GetIOTRepo() domain.IIot {
 type RsCount struct {
 	Count int64 `json:"count"`
 } // @name Count
+
+type RsIsIotActived struct {
+	Actived bool `json:"actived"`
+}
 
 // type RIOTChangeStatus struct {
 // 	// Address string              `json:"address"`
@@ -582,4 +595,54 @@ type RsCount struct {
 // 	} else {
 // 		r.JSON(200, signeds)
 // 	}
+// }
+
+// Create godoc
+// @Summary      Get by bounding box
+// @Description  Get iot by bounding box
+// @Tags         Iots
+// @Accept       json
+// @Produce      json
+// @Param        minLng   	query      	number  true  "Min longitude"
+// @Param        minLat   	query      	number  true  "Min latitude"
+// @Param        maxLng   	query      	number  true  "Max longitude"
+// @Param        maxLat   	query      	number  true  "Max latitude"
+// @Success      200		{array}		IOTDevice
+// @Failure      400		{object}	Error
+// @Router       /iots/by-bb [get]
+// func (ctrl *IotCtrl) GetByBB(r *gin.Context) {
+// minLng, err := strconv.ParseFloat(r.Query("minLng"), 64)
+// if nil != err {
+// 	r.JSON(400, dmodels.ErrBadRequest("Min longitude must be double"))
+// 	return
+// }
+// minLat, err := strconv.ParseFloat(r.Query("minLat"), 64)
+// if nil != err {
+// 	r.JSON(400, dmodels.ErrBadRequest("Min latitude must be double"))
+// 	return
+// }
+// maxLng, err := strconv.ParseFloat(r.Query("maxLng"), 64)
+// if nil != err {
+// 	r.JSON(400, dmodels.ErrBadRequest("Min longitude must be double"))
+// 	return
+// }
+// maxLat, err := strconv.ParseFloat(r.Query("maxLat"), 64)
+// if nil != err {
+// 	r.JSON(400, dmodels.ErrBadRequest("Min latitude must be double"))
+// 	return
+// }
+// var min = &models.Point4326{
+// 	Lng: minLng,
+// 	Lat: minLat,
+// }
+// var max = &models.Point4326{
+// 	Lng: maxLng,
+// 	Lat: maxLat,
+// }
+// data, err := ctrl.iot.GetByBB(min, max)
+// if nil != err {
+// 	r.JSON(500, err)
+// } else {
+// 	r.JSON(200, data)
+// }
 // }

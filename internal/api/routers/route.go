@@ -1,6 +1,8 @@
 package routers
 
 import (
+	"log"
+
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/iott-cloud/internal/api/ctrls"
 	"github.com/Dcarbon/iott-cloud/internal/api/mids"
@@ -31,6 +33,7 @@ type Router struct {
 	userCtrl     *ctrls.UserCtrl
 	sensorCtrl   *ctrls.SensorCtrl
 	operatorCtrl *ctrls.OperatorCtrl
+	versionCtrl  *ctrls.VersionCtrl
 }
 
 func NewRouter(config Config,
@@ -43,6 +46,11 @@ func NewRouter(config Config,
 	}
 
 	projectCtrl, err := ctrls.NewProjectCtrl(config.DBUrl, config.StorageHost, isvToken)
+	if nil != err {
+		return nil, err
+	}
+
+	verCtrl, err := ctrls.NewVersionCtrl()
 	if nil != err {
 		return nil, err
 	}
@@ -91,6 +99,7 @@ func NewRouter(config Config,
 		userCtrl:     userCtrl,
 		sensorCtrl:   sensorCtrl,
 		operatorCtrl: opCtrl,
+		versionCtrl:  verCtrl,
 	}
 
 	r.Engine.MaxMultipartMemory = 25 << 20
@@ -115,13 +124,15 @@ func NewRouter(config Config,
 		)
 
 		iotRoute.GET("/:iotId", iotCtrl.GetIot)
-		iotRoute.GET("/:iotId/mint-sign", iotCtrl.GetMintSigns)
 		iotRoute.GET("/:iotId/minted", iotCtrl.GetMinted)
+		iotRoute.GET("/:iotId/mint-sign", iotCtrl.GetMintSigns)
+		iotRoute.GET("/:iotId/is-actived", iotCtrl.IsActived)
 
 		iotRoute.GET("/seperator", iotCtrl.GetDomainSeperator)
 		iotRoute.GET("/geojson", iotCtrl.GetIotPosition)
 		iotRoute.GET("/count", iotCtrl.Count)
 		iotRoute.GET("/by-address", iotCtrl.GetIotByAddress)
+		iotRoute.GET("/list", iotCtrl.GetIots)
 
 		iotRoute.POST("/:iotAddr/mint-sign", iotCtrl.CreateMint)
 
@@ -214,6 +225,13 @@ func NewRouter(config Config,
 			mids.NewA2(config.JwtKey, "").HandlerFunc,
 			userCtrl.Update,
 		)
+	}
+
+	var versionRoute = v1.Group("/version")
+	{
+		versionRoute.GET("/latest", verCtrl.GetLatest)
+		versionRoute.GET("/download", verCtrl.Download)
+		log.Println("Register version route")
 	}
 
 	return r, nil

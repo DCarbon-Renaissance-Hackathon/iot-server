@@ -30,9 +30,10 @@ type RIotUpdate struct {
 } //@name RIotChangeStatus
 
 type RIotGetList struct {
-	Skip   int                  ``
-	Limit  int                  ``
-	Status dmodels.DeviceStatus ``
+	Skip      int                  `json:"skip" form:"skip"`
+	Limit     int                  `json:"limit" form:"limit" binding:"max=50"`
+	ProjectId int64                `json:"projectId" form:"projectId" binding:"required"`
+	Status    dmodels.DeviceStatus `json:"status" form:"status"`
 }
 
 type RIotMint struct {
@@ -62,6 +63,12 @@ type RIotGetMintedList struct {
 type RIotCount struct {
 } //@name RIotCount
 
+type RIsIotActiced struct {
+	From  int64 `json:"from" form:"from" binding:"required"`
+	To    int64 `json:"to" form:"to" binding:"required"`
+	IotId int64 `json:"iotId" form:"iotId" binding:"required"`
+} //@name RIsIotActiced
+
 type PositionId struct {
 	Id       int64          `json:"id"`
 	Position *dmodels.Point `json:"position"`
@@ -71,11 +78,11 @@ type IIot interface {
 	Create(*RIotCreate) (*models.IOTDevice, error)
 	Update(req *RIotUpdate) (*models.IOTDevice, error)
 	ChangeStatus(*RIotChangeStatus) (*models.IOTDevice, error)
-	GetByBB(min, max *models.Point4326) ([]*models.IOTDevice, error) // boundingbox
-	GetIOT(id int64) (*models.IOTDevice, error)
+	GetIot(id int64) (*models.IOTDevice, error)
+	GetIots(*RIotGetList) ([]*models.IOTDevice, error)
 	GetIotPositions(*RIotGetList) ([]*PositionId, error)
 
-	GetIOTByAddress(addr dmodels.EthAddress) (*models.IOTDevice, error)
+	GetIotByAddress(addr dmodels.EthAddress) (*models.IOTDevice, error)
 
 	// GetIOTStatus(iotAddr string) models.IOTStatus
 
@@ -88,4 +95,5 @@ type IIot interface {
 	GetMinted(*RIotGetMintedList) ([]*models.Minted, error)
 
 	CountIot(*RIotCount) (int64, error)
+	IsIotActived(req *RIsIotActiced) (bool, error)
 }
