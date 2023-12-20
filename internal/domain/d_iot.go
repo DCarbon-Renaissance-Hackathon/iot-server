@@ -17,7 +17,7 @@ type RIotCreate struct {
 	Address  dmodels.EthAddress `json:"address" binding:"required"`
 	Type     models.IOTType     `json:"type"  binding:"required"`
 	Position *models.Point4326  `json:"position" binding:"required"`
-} //@name RIotCreate
+}
 
 type RIotChangeStatus struct {
 	IotId  int64                 `json:"iotId" form:"iotId" binding:"required"`
@@ -71,7 +71,7 @@ type RIsIotActiced struct {
 
 type PositionId struct {
 	Id       int64          `json:"id"`
-	Position *dmodels.Point `json:"position"`
+	Position *dmodels.Coord `json:"position"`
 } //@name PositionId
 
 type IIot interface {

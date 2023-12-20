@@ -63,8 +63,8 @@ func (ctrl *IotCtrl) SetSensor(sensor domain.ISensor) {
 // @Tags         Iots
 // @Accept       json
 // @Produce      json
-// @Param        iot   				body		RIotCreate			true	"IOT information"
-// @Param        Authorization		header		string				true	"Authorization token (`Bearer $token`)"
+// @Param        iot   				body		domain.RIotCreate		true	"IOT information"
+// @Param        Authorization		header		string			true	"Authorization token (`Bearer $token`)"
 // @Success      200				{object}	IOTDevice
 // @Failure      400				{object}	Error
 // @Failure      404				{object}	Error

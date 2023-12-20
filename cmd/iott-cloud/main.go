@@ -8,8 +8,6 @@ import (
 	"github.com/Dcarbon/iott-cloud/internal/api/routers"
 	"github.com/Dcarbon/iott-cloud/internal/env"
 
-	"github.com/Dcarbon/iott-cloud/cmd/iott-cloud/docs"
-
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -36,12 +34,12 @@ var config = routers.Config{
 // @host      localhost:8081
 // @BasePath  /api/v1
 func main() {
-	docs.SwaggerInfo.Title = "Internet of trusted thing cloud"
-	docs.SwaggerInfo.Version = "1.0.0"
-	docs.SwaggerInfo.Description = "Internet of trusted thing cloud"
-	docs.SwaggerInfo.BasePath = "/api/v1"
-	docs.SwaggerInfo.Schemes = []string{env.ServerScheme}
-	docs.SwaggerInfo.Host = env.ServerHost
+	// docs.SwaggerInfo.Title = "Internet of trusted thing cloud"
+	// docs.SwaggerInfo.Version = "1.0.0"
+	// docs.SwaggerInfo.Description = "Internet of trusted thing cloud"
+	// docs.SwaggerInfo.BasePath = "/api/v1"
+	// docs.SwaggerInfo.Schemes = []string{env.ServerScheme}
+	// docs.SwaggerInfo.Host = env.ServerHost
 
 	var rt, err = routers.NewRouter(config)
 	utils.PanicError("Create router", err)

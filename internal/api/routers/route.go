@@ -32,6 +32,7 @@ type Router struct {
 	projectCtrl  *ctrls.ProjectCtrl
 	userCtrl     *ctrls.UserCtrl
 	sensorCtrl   *ctrls.SensorCtrl
+	xsmCtrl      *ctrls.XSMCtrl
 	operatorCtrl *ctrls.OperatorCtrl
 	versionCtrl  *ctrls.VersionCtrl
 }
@@ -78,6 +79,11 @@ func NewRouter(config Config,
 	}
 	iotCtrl.SetSensor(sensorCtrl.GetSensorRepo())
 
+	xsmCtrl, err := ctrls.NewXSMCtrl()
+	if nil != err {
+		return nil, err
+	}
+
 	userCtrl, err := ctrls.NewUserCtrl(config.JwtKey, config.TokenDuration)
 	if nil != err {
 		return nil, err
@@ -98,6 +104,7 @@ func NewRouter(config Config,
 		projectCtrl:  projectCtrl,
 		userCtrl:     userCtrl,
 		sensorCtrl:   sensorCtrl,
+		xsmCtrl:      xsmCtrl,
 		operatorCtrl: opCtrl,
 		versionCtrl:  verCtrl,
 	}
@@ -162,6 +169,9 @@ func NewRouter(config Config,
 
 		sensorRoute.GET("/sm", sensorCtrl.GetMetrics)
 		sensorRoute.GET("/sm/aggregate", sensorCtrl.GetAggregatedMetrics)
+
+		sensorRoute.POST("/xsm", xsmCtrl.Create)
+		sensorRoute.GET("/xsm", xsmCtrl.GetList)
 	}
 
 	var opRoute = v1.Group("/op")
