@@ -134,6 +134,7 @@ func NewRouter(config Config,
 		iotRoute.GET("/:iotId/minted", iotCtrl.GetMinted)
 		iotRoute.GET("/:iotId/mint-sign", iotCtrl.GetMintSigns)
 		iotRoute.GET("/:iotId/is-actived", iotCtrl.IsActived)
+		iotRoute.GET("/:iotId/mint-sign/latest", iotCtrl.GetMintSignsLatest)
 
 		iotRoute.GET("/seperator", iotCtrl.GetDomainSeperator)
 		iotRoute.GET("/geojson", iotCtrl.GetIotPosition)

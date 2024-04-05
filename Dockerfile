@@ -1,4 +1,4 @@
-FROM harbor.viet-tin.com/dcarbon/go-shared as builder
+FROM dcarbon/go-shared as builder
 
 WORKDIR /dcarbon/iott-cloud
 COPY . .
@@ -12,7 +12,7 @@ RUN cd ./cmd/iott-cloud/ && \
     cp  iott-cloud /usr/bin
 
 
-FROM harbor.viet-tin.com/dcarbon/dimg:minimal
+FROM dcarbon/dimg:minimal
 
 COPY --from=builder /usr/bin/iott-cloud /usr/bin/iott-cloud
 ENV GIN_MODE=release

@@ -7,10 +7,7 @@ const (
 	TableNameProjectSpecs = "projects_specs"
 	TableNameProjectImage = "projects_image"
 
-	TableNameIOT      = "iots"
-	TableNameMintSign = "mint_sign"
-	TableNameMinted   = "minted"
-	// TableNameMetrics     = "metrics"
+	TableNameIOT = "iots"
 
 	TableNameSensors     = "sensors"
 	TableNameSm          = "sensor_metric"

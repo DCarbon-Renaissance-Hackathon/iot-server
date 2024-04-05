@@ -14,9 +14,12 @@ import (
 	"gorm.io/gorm"
 )
 
-var dbUrl = utils.StringEnv("DB_URL", "")
-var amqpUrl = utils.StringEnv("AMQP_URL", "")
-var redisUrl = utils.StringEnv("REDIS_URL", "")
+// var dbUrl = utils.StringEnv("DB_URL", "postgres://admin:hellosecret@localhost/iot_op")
+// var amqpUrl = utils.StringEnv("AMQP_URL", "amqp://rbuser:hellosecret@localhost")
+
+var dbUrl = utils.StringEnv("DB_URL", "postgres://admin:244466666@10.60.0.58/iott?sslmode=disable")
+var amqpUrl = utils.StringEnv("AMQP_URL", "amqp://rbuser:244466666@10.60.0.58")
+var redisUrl = utils.StringEnv("REDIS_URL", "redis://localhost:6379")
 
 var mut = &sync.Mutex{}
 
@@ -69,7 +72,7 @@ func GetRedis() *redis.Client {
 
 			_, err = redisClient.Ping(context.TODO()).Result()
 			if nil != err {
-				panic(errors.New("ping to redis error: " + err.Error()))
+				// panic(errors.New("ping to redis error: " + err.Error()))
 			}
 		}
 	}

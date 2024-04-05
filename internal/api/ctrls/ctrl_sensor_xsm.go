@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
+	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/repo"
 	"github.com/Dcarbon/iott-cloud/internal/rss"
 	"github.com/gin-gonic/gin"
@@ -75,7 +76,8 @@ func (ctrl *XSMCtrl) GetList(r *gin.Context) {
 		return
 	}
 
-	resp, err := ctrl.ixsm.GetList(payload)
+	var resp []*models.XSMetric
+	resp, err = ctrl.ixsm.GetList(payload)
 	if nil != err {
 		r.JSON(500, dmodels.ErrBadRequest(err.Error()))
 		return

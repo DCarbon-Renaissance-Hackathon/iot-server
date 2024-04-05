@@ -22,6 +22,7 @@ func NewVersionCtrl() (*VersionCtrl, error) {
 		path:     utils.StringEnv("IOT_IMAGE_PATH", "./data"),
 		versions: make(map[models.IOTType]string),
 	}
+
 	vCtrl.loadVersion(models.IOTTypeBurnMethane)
 	vCtrl.loadVersion(models.IOTTypeBurnBiomass)
 

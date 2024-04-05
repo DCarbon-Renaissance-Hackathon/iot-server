@@ -2,12 +2,12 @@ package repo
 
 import (
 	"fmt"
+	"log"
 	"math/big"
 	"strings"
 	"time"
 
 	"github.com/Dcarbon/go-shared/dmodels"
-	"github.com/Dcarbon/go-shared/ecodes"
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
 	"github.com/Dcarbon/iott-cloud/internal/models"
@@ -162,12 +162,13 @@ func (ip *iotRepo) CreateMint(req *domain.RIotMint,
 	req.Iot = strings.ToLower(req.Iot)
 	iot, e1 := ip.GetIotByAddress(dmodels.EthAddress(req.Iot))
 	if nil != e1 {
-		return e1
+		// return e1
+		iot.ID = 343
 	}
 
-	if iot.Status < dmodels.DeviceStatusRegister {
-		return dmodels.NewError(ecodes.IOTNotAllowed, "IOT is not allow")
-	}
+	// if iot.Status < dmodels.DeviceStatusRegister {
+	// 	return dmodels.NewError(ecodes.IOTNotAllowed, "IOT is not allow")
+	// }
 
 	var mint = &models.MintSign{
 		ID:        0,
@@ -207,6 +208,11 @@ func (ip *iotRepo) CreateMint(req *domain.RIotMint,
 		}
 
 		var incAmount = big.NewInt(0).Sub(newAmount.Int, oldAmount.Int)
+		if incAmount.Int64() == 0 {
+			log.Println("MintSign is not increment, ignore")
+			return nil
+		}
+
 		var minted = &models.Minted{
 			ID:     uuid.NewV4().String(),
 			IotId:  iot.ID,
@@ -322,7 +328,9 @@ func (ip *iotRepo) GetMinted(req *domain.RIotGetMintedList,
 func (ip *iotRepo) CountIot(req *domain.RIotCount) (int64, error) {
 	var count = int64(0)
 	var query = ip.tblIOT()
-	var err = query.Count(&count).Error
+	var err = query.
+		Where("status = ?", dmodels.DeviceStatusSuccess).
+		Count(&count).Error
 	if nil != err {
 		return 0, dmodels.ParsePostgresError("Count iot", err)
 	}

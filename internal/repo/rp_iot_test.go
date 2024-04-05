@@ -69,12 +69,13 @@ func TestIOTChangeStatus(t *testing.T) {
 }
 
 func TestIotUpdate(t *testing.T) {
+	// 9.638277, 106.398296
 	var data, err = iotRepoTest.Update(
 		&domain.RIotUpdate{
-			IotId: 294,
+			IotId: 26,
 			Position: &models.Point4326{
-				Lng: 105.553486,
-				Lat: 21.706776,
+				Lng: 106.398296,
+				Lat: 9.638277,
 			},
 		},
 	)

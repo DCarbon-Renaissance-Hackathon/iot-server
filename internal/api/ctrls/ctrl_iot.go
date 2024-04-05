@@ -10,6 +10,7 @@ import (
 	"github.com/Dcarbon/go-shared/libs/esign"
 	"github.com/Dcarbon/go-shared/libs/utils"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
+	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/repo"
 	"github.com/Dcarbon/iott-cloud/internal/rss"
 	"github.com/gin-gonic/gin"
@@ -337,11 +338,52 @@ func (ctrl *IotCtrl) GetMintSigns(r *gin.Context) {
 		payload.To = time.Now().Unix()
 	}
 
-	signeds, err := ctrl.iot.GetMintSigns(payload)
+	var signeds []*models.MintSign
+	signeds, err = ctrl.iot.GetMintSigns(payload)
 	if nil != err {
 		r.JSON(500, err)
 	} else {
 		r.JSON(200, signeds)
+	}
+}
+
+// GetRawMetric		godoc
+// @Summary			Get mint signature of iot
+// @Description		Get mint signature of iot
+// @Tags			Iots
+// @Accept			json
+// @Produce			json
+// @Param			iotId					path		number				true	"Iot id"
+// @Success			200						{object}	models.MintSign
+// @Failure			400						{object}	Error
+// @Failure			404						{object}	Error
+// @Failure			500						{object}	Error
+// @Router			/iots/{iotId}/mint-sign/latest 		[get]
+func (ctrl *IotCtrl) GetMintSignsLatest(r *gin.Context) {
+	iotId, err := strconv.ParseInt(r.Param("iotId"), 10, 64)
+	if nil != err {
+		r.JSON(400, dmodels.ErrBadRequest("Iot id is invalid: "+err.Error()))
+		return
+	}
+
+	var payload = &domain.RIotGetMintSignList{
+		From:  time.Now().Unix() - 365*86400,
+		To:    time.Now().Unix(),
+		IotId: iotId,
+		Sort:  domain.SortDesc,
+		Limit: 1,
+	}
+
+	var signeds []*models.MintSign
+	signeds, err = ctrl.iot.GetMintSigns(payload)
+	if nil != err {
+		r.JSON(500, err)
+	} else {
+		if len(signeds) > 0 {
+			r.JSON(200, signeds[0])
+		} else {
+			r.JSON(200, map[string]interface{}{})
+		}
 	}
 }
 

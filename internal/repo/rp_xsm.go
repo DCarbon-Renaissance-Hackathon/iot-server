@@ -46,7 +46,8 @@ func (impl *XSMImpl) GetList(req *domain.RXSMGetList,
 ) ([]*models.XSMetric, error) {
 	var data = make([]*models.XSMetric, 0)
 	var query = impl.tblXSM().Offset(req.Skip).
-		Select("sensor_type, metric, created_at")
+		Select("sensor_type, metric, created_at").
+		Order("created_at desc")
 	if req.Limit > 0 {
 		query = query.Limit(req.Limit)
 	}

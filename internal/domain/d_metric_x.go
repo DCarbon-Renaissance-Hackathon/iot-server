@@ -12,12 +12,12 @@ type RXSMCreate struct {
 } // @name RXSMCreate
 
 type RXSMGetList struct {
-	Skip       int                `json:"skip"`
-	Limit      int                `json:"limit"`
-	From       int64              `json:"from"`
-	To         int64              `json:"to"`
-	Address    dmodels.EthAddress `json:"address"`
-	SensorType dmodels.SensorType `json:"sensorType"`
+	Skip       int                `json:"skip"        form:"skip"`
+	Limit      int                `json:"limit"       form:"limit"`
+	From       int64              `json:"from"        form:"from"`
+	To         int64              `json:"to"          form:"to"`
+	Address    dmodels.EthAddress `json:"address"     form:"address"`
+	SensorType dmodels.SensorType `json:"sensorType"  form:"sensorType"`
 } // @name RXSMGetList
 
 type IXSM interface {

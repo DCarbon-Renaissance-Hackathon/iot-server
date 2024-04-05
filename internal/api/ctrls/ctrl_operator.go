@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dcarbon/go-shared/dmodels"
 	"github.com/Dcarbon/iott-cloud/internal/domain"
+	"github.com/Dcarbon/iott-cloud/internal/models"
 	"github.com/Dcarbon/iott-cloud/internal/repo"
 	"github.com/gin-gonic/gin"
 )
@@ -50,7 +51,8 @@ func (ctrl *OperatorCtrl) GetStatus(r *gin.Context) {
 		return
 	}
 
-	metric, err := ctrl.operator.GetStatus(int64(iotId))
+	var metric *models.OpIotStatus
+	metric, err = ctrl.operator.GetStatus(int64(iotId))
 	if nil != err {
 		r.JSON(400, err)
 		return

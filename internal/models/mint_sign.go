@@ -9,6 +9,11 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
+const (
+	TableNameMintSign = "mint_sign"
+	TableNameMinted   = "minted"
+)
+
 // var minterDomain = esign.MustNewERC712(
 // 	&esign.TypedDataDomain{
 // 		Name:              "Carbon",
@@ -69,9 +74,7 @@ func (msign *MintSign) Verify(dMinter *esign.ERC712) error {
 	}
 
 	var signed, err = hexutil.Decode(
-		esign.HexConcat(
-			[]string{msign.R, msign.S, msign.V},
-		),
+		esign.HexConcat(msign.R, msign.S, msign.V),
 	)
 
 	if nil != err {
